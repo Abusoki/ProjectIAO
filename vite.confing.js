@@ -12,7 +12,7 @@ export default defineConfig({
   plugins: [react()],
   // CRITICAL FIX: Set base to your repository name with slashes
   // This tells Vite your app lives at https://abusoki.github.io/ProjectIAO/
-  base: '/ProjectIAO/', 
+  base: '/', 
   build: {
     rollupOptions: {
       input: {
