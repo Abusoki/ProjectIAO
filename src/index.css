@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* You can add global custom styles here if needed, 
+   but most styling is handled by Tailwind classes in your JSX.
+*/
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #0f172a; /* matches bg-slate-950 */
+  color: #e2e8f0; /* matches text-slate-200 */
+}
