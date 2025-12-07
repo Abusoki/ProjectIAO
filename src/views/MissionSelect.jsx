@@ -24,6 +24,7 @@ export default function MissionSelect({ troops, selectedTroops, setSelectedTroop
         await Promise.all(updates);
 
         // 2. Create Combat Session in DB
+        // Scale enemy count slightly based on squad size? (Optional, kept random 1-4 for now)
         const enemyCount = Math.floor(Math.random() * 4) + 1;
         const newEnemies = Array.from({ length: enemyCount }, (_, i) => {
             if(mission.enemyType === 'golem') {
@@ -40,7 +41,7 @@ export default function MissionSelect({ troops, selectedTroops, setSelectedTroop
         setEnemies(newEnemies);
         setGameState('fighting');
         
-        // Fix: Use the prop to set the log instead of crashing
+        // Use the prop to set the log instead of crashing
         setCombatLog([`Deployed to ${mission.name}`]);
         
         setView('combat');
@@ -62,7 +63,8 @@ export default function MissionSelect({ troops, selectedTroops, setSelectedTroop
                         <button 
                             key={t.uid} 
                             disabled={busy}
-                            onClick={() => setSelectedTroops(p => isSelected ? p.filter(id => id !== t.uid) : p.length < 2 ? [...p, t.uid] : p)}
+                            // CHANGE IS HERE: Changed "p.length < 2" to "p.length < 3"
+                            onClick={() => setSelectedTroops(p => isSelected ? p.filter(id => id !== t.uid) : p.length < 3 ? [...p, t.uid] : p)}
                             className={`p-3 rounded-lg border flex justify-between items-center ${isSelected ? 'bg-amber-900/40 border-amber-600' : 'bg-slate-800 border-slate-700'} ${busy ? 'opacity-50' : ''}`}
                         >
                             <div className="text-left"><div className="font-bold">{t.name}</div><div className="text-xs text-slate-500">{busy ? 'Busy' : `${t.race} ${t.class}`}</div></div>
