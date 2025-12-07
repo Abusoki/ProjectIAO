@@ -57,9 +57,9 @@ export default function App() {
     const maxTroops = playerLevel >= 10 ? 4 : 3;
 
     // --- State Wrapper for Cleanup ---
+    // Forces troop state reset when manually leaving combat
     const handleGameStateChange = (newState) => {
         setGameState(newState);
-        // If returning to idle (leaving battle manually), force cleanup troops
         if (newState === 'idle') {
             const activeTroops = troopsRef.current.filter(t => t.inCombat);
             if (activeTroops.length > 0) {
@@ -242,7 +242,7 @@ export default function App() {
                     user={user} 
                     appId={appId} 
                     setEnemies={setEnemies} 
-                    setGameState={gameState} 
+                    setGameState={setGameState} 
                     setCombatLog={setCombatLog} 
                     setAutoBattle={setAutoBattle}
                     startMission={startCombat}
