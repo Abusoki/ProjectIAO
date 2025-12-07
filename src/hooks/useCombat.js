@@ -2,25 +2,23 @@ import { useState, useEffect, useRef } from 'react';
 import { doc, updateDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { getEffectiveStats } from '../utils/mechanics';
-import { LEVEL_XP_CURVE, SKILL_XP_CURVE } from '../config/gameData';
+import { LEVEL_XP_CURVE } from '../config/gameData';
 import { generateId } from '../utils/helpers';
 
 export function useCombat(user, troops, enemies, gameState, setGameState, setEnemies, setView, selectedTroops, inventory, autoBattle, setAutoBattle) {
     const [combatLog, setCombatLog] = useState([]);
-    const [damageEvents, setDamageEvents] = useState([]); // Visual Juice
+    const [damageEvents, setDamageEvents] = useState([]); 
     const processingResult = useRef(false);
 
-    // --- VISUAL JUICE HELPER ---
     const addDamageEvent = (targetId, amount, type = 'damage') => {
         const id = Math.random();
         setDamageEvents(prev => [...prev, { id, targetId, amount, type }]);
-        // Auto remove after animation
         setTimeout(() => {
             setDamageEvents(prev => prev.filter(e => e.id !== id));
         }, 1000);
     };
 
-    // --- COMBAT LOOP ---
+    // COMBAT LOOP
     useEffect(() => {
         if (gameState !== 'fighting') return;
         
@@ -52,7 +50,6 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                 if (targets.length === 0) { battleOver = true; return; }
                 const target = targets[Math.floor(Math.random() * targets.length)];
                 
-                // Urblosh Skill: Concentrated
                 let dmgMod = 1.0;
                 if (isPlayer && actor.skills?.row1 === 'oil_concentrated') {
                     actor.combatAttackCount = (actor.combatAttackCount || 0) + 1;
@@ -67,11 +64,8 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                 
                 target.currentHp -= finalDmg;
                 logUpdates.push(`${actor.name} hits ${target.name} for ${finalDmg}`);
-                
-                // Trigger Visual
                 addDamageEvent(target.id || target.uid, finalDmg, 'damage');
 
-                // Urblosh Skill: Refined (Heal)
                 if (isPlayer && actor.skills?.row1 === 'oil_refined') {
                     actor.combatHitCount = (actor.combatHitCount || 0) + 1;
                     if (actor.combatHitCount % 5 === 0) {
@@ -91,9 +85,11 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                 if (target.uid) dirtyTroops.set(target.uid, target);
             });
 
+            // Update UI
             setEnemies([...enemies]); 
             if (logUpdates.length > 0) setCombatLog(prev => [...prev, ...logUpdates].slice(-8));
             
+            // Sync to DB
             updateDoc(combatRef, { enemies: enemies, active: !battleOver }).catch(()=>{});
             dirtyTroops.forEach(t => {
                 updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', t.uid), { 
@@ -116,20 +112,16 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
         return () => clearInterval(interval);
     }, [gameState, enemies]);
 
-    // --- HANDLERS ---
     const handleVictory = async (survivors) => {
         setGameState('victory');
         setCombatLog(prev => [...prev, "VICTORY!"]);
         const xpGain = 20;
         let newInv = [...inventory];
         
-        // Loot Logic
-        // Check for Gloves
         let dropChance = 0.1;
         const hasGloves = survivors.some(t => t.equipment?.gloves?.name === 'Slimey Gloves');
         if (hasGloves) dropChance *= 2; 
 
-        // Drops based on enemy type (We check the first enemy to guess type for now)
         const isMines = enemies[0]?.name.includes("Golem");
 
         if(isMines) {
@@ -173,5 +165,6 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
         await Promise.all(party.map(u => deleteDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', u.uid))));
     };
 
-    return { combatLog, damageEvents };
+    // Return setCombatLog so App.jsx can use it
+    return { combatLog, setCombatLog, damageEvents };
 }
