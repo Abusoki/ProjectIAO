@@ -3,7 +3,7 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, doc, onSnapshot, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { auth, db } from './config/firebase';
 import { generateRecruit } from './utils/mechanics';
-import { TAVERN_REFRESH_MS } from './config/gameData';
+import { TAVERN_REFRESH_MS, MISSIONS } from './config/gameData';
 
 // Hooks
 import { useGameLoop } from './hooks/useGameLoop';
@@ -41,6 +41,9 @@ export default function App() {
     const [enemies, setEnemies] = useState([]);
     const [autoBattle, setAutoBattle] = useState(false);
     
+    // Auto-battle tracking
+    const [lastMissionKey, setLastMissionKey] = useState(null);
+
     const [showNameModal, setShowNameModal] = useState(false);
     const [newName, setNewName] = useState("");
 
@@ -56,10 +59,64 @@ export default function App() {
     // --- Hooks Logic ---
     useGameLoop(user, troops, inventory, gameState);
     
-    // CRITICAL FIX: We need setCombatLog to pass to MissionSelect
     const { combatLog, setCombatLog, damageEvents } = useCombat(
         user, troops, enemies, gameState, setGameState, setEnemies, setView, selectedTroops, inventory, autoBattle, setAutoBattle
     );
+
+    // --- MAIN COMBAT START FUNCTION ---
+    const startCombat = async (missionKey) => {
+        const currentTroops = troopsRef.current;
+        const validSelectedIds = selectedTroops.filter(id => currentTroops.find(t => t.uid === id));
+        
+        if (validSelectedIds.length === 0) { 
+            setAutoBattle(false); 
+            return; 
+        }
+        
+        setLastMissionKey(missionKey);
+
+        const mission = MISSIONS[missionKey];
+        
+        // 1. Mark troops as inCombat
+        const updates = validSelectedIds.map(uid => 
+            updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', uid), { 
+                inCombat: true, actionGauge: 0, battleKills: 0, combatHitCount: 0, combatAttackCount: 0
+            })
+        );
+        await Promise.all(updates);
+
+        // 2. Create Combat Session in DB
+        const enemyCount = Math.floor(Math.random() * 4) + 1;
+        const newEnemies = Array.from({ length: enemyCount }, (_, i) => {
+            if(mission.enemyType === 'golem') {
+                 return { id: `golem_${i}`, name: `Rock Golem ${i+1}`, maxHp: 80, currentHp: 80, ap: 15, def: 5, spd: 4, actionGauge: Math.random() * 20 };
+            }
+            return { id: `blob_${i}`, name: `Bloblin ${i+1}`, maxHp: 40, currentHp: 40, ap: 8, def: 0, spd: 8, actionGauge: Math.random() * 50 };
+        });
+        
+        await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'system', 'combat'), {
+            active: true, enemies: newEnemies, troopIds: validSelectedIds, log: [`Deployed to ${mission.name}`], tick: 0
+        });
+
+        // 3. Update Local State
+        setEnemies(newEnemies);
+        setGameState('fighting');
+        setCombatLog([`Deployed to ${mission.name}`]);
+        setView('combat');
+    };
+
+    // --- Auto Battle Trigger ---
+    useEffect(() => {
+        if (gameState === 'victory' && autoBattle && lastMissionKey) {
+            const timer = setTimeout(() => { 
+                if (view === 'combat' && autoBattle) {
+                    startCombat(lastMissionKey); 
+                }
+            }, 2500);
+            return () => clearTimeout(timer);
+        }
+    }, [gameState, autoBattle, view, lastMissionKey]);
+
 
     // --- Auth & Data ---
     useEffect(() => {
@@ -87,7 +144,6 @@ export default function App() {
         if (!user) return;
         
         const unsubTroops = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'troops'), (snap) => {
-            // Prevent rubber-banding during active combat simulation
             if (gameStateRef.current === 'fighting') return; 
             const t = [];
             snap.forEach(doc => t.push({ ...doc.data(), uid: doc.id }));
@@ -111,7 +167,6 @@ export default function App() {
                     if (data.troopIds) setSelectedTroops(data.troopIds);
                     setGameState('fighting');
                 } else if (gameStateRef.current === 'fighting') {
-                    // If DB says inactive but local is fighting, end fight
                     setGameState('victory');
                 }
             }
@@ -170,7 +225,8 @@ export default function App() {
                     setEnemies={setEnemies} 
                     setGameState={setGameState} 
                     setCombatLog={setCombatLog} 
-                    setAutoBattle={setAutoBattle} 
+                    setAutoBattle={setAutoBattle}
+                    startMission={startCombat}
                 />}
                 
                 {view === 'combat' && <Combat 
