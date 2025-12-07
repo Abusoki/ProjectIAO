@@ -29,8 +29,8 @@ export const MISSIONS = {
 };
 
 export const SMITHING_RECIPES = [
-    { id: 'iron_bar', name: 'Iron Bar', input: 'Iron Ore', count: 1, level: 1, xp: 10, time: 50 }, // 5s
-    { id: 'iron_sword', name: 'Iron Sword', input: 'Iron Bar', count: 2, level: 3, xp: 50, time: 100 } // 10s
+    { id: 'iron_bar', name: 'Iron Bar', input: 'Iron Ore', count: 1, level: 1, xp: 10, time: 50 },
+    { id: 'iron_sword', name: 'Iron Sword', input: 'Iron Bar', count: 2, level: 3, xp: 50, time: 100 }
 ];
 
 export const MAX_LEVEL = 10;
@@ -38,7 +38,13 @@ export const MAX_COOKING_LEVEL = 10;
 export const MAX_SMITHING_LEVEL = 10;
 
 export const LEVEL_XP_CURVE = [0, 100, 250, 500, 1000, 2000, 4000, 8000, 15000, 99999];
+
+// Define one standard curve for skills
 export const SKILL_XP_CURVE = [0, 50, 150, 300, 600, 1200, 2500, 5000, 10000, 99999];
+
+// Export aliases to satisfy imports in different files
+export const COOKING_XP_CURVE = SKILL_XP_CURVE;
+export const SMITHING_XP_CURVE = SKILL_XP_CURVE;
 
 export const TAVERN_REFRESH_MS = 4 * 60 * 60 * 1000;
 export const NAMES = ["Kael", "Thar", "Olg", "Brim", "Syl", "Vex", "Dorn", "Lira", "Mok", "Zed", "Grom", "Fae", "Urk", "Zil"];
