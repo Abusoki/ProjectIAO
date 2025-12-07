@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, doc, onSnapshot, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { collection, doc, onSnapshot, getDoc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from './config/firebase';
 import { generateRecruit } from './utils/mechanics';
 import { TAVERN_REFRESH_MS, MISSIONS } from './config/gameData';
