@@ -1,16 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
-import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { getEffectiveStats } from '../utils/mechanics';
 import { LEVEL_XP_CURVE } from '../config/gameData';
 import { generateId } from '../utils/helpers';
 
-export function useCombat(user, troops, enemies, gameState, setGameState, setEnemies, inventory) {
+export function useCombat(user, troops, enemies, gameState, setGameState, setEnemies, setView, selectedTroops, inventory, autoBattle, setAutoBattle) {
     const [combatLog, setCombatLog] = useState([]);
     const [damageEvents, setDamageEvents] = useState([]); 
     const processingResult = useRef(false);
+    
+    // Fix: Keep a ref to inventory so we always have the latest version when battle ends
+    const inventoryRef = useRef(inventory);
+    useEffect(() => { inventoryRef.current = inventory; }, [inventory]);
 
-    // Visual Juice Helper
     const addDamageEvent = (targetId, amount, type = 'damage') => {
         const id = Math.random();
         setDamageEvents(prev => [...prev, { id, targetId, amount, type }]);
@@ -19,10 +22,9 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
         }, 1000);
     };
 
-    // COMBAT LOOP
     useEffect(() => {
         if (gameState !== 'fighting') {
-            processingResult.current = false; // Reset lock when not fighting
+            processingResult.current = false;
             return;
         }
         
@@ -34,21 +36,14 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             let battleOver = false;
             let dirtyTroops = new Map();
             
-            // Filter troops that are marked as inCombat in local state
             const fighters = troops.filter(t => t.inCombat);
-            
-            // Safety check
             if (fighters.length === 0 && enemies.length > 0) return;
 
-            // 1. Tick Action Gauges
             [...fighters, ...enemies].forEach(u => {
                 if (u.currentHp > 0) u.actionGauge = (u.actionGauge || 0) + (u.baseStats?.spd || u.spd || 8);
             });
 
-            // 2. Determine Actors (Turn Order)
-            const actors = [...fighters, ...enemies]
-                .filter(u => u.currentHp > 0 && u.actionGauge >= 100)
-                .sort((a, b) => b.actionGauge - a.actionGauge);
+            const actors = [...fighters, ...enemies].filter(u => u.currentHp > 0 && u.actionGauge >= 100).sort((a, b) => b.actionGauge - a.actionGauge);
             
             actors.forEach(actor => {
                 if (battleOver || actor.currentHp <= 0) return;
@@ -59,7 +54,6 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                 if (targets.length === 0) { battleOver = true; return; }
                 const target = targets[Math.floor(Math.random() * targets.length)];
                 
-                // Skills & Damage Calc
                 let dmgMod = 1.0;
                 if (isPlayer && actor.skills?.row1 === 'oil_concentrated') {
                     actor.combatAttackCount = (actor.combatAttackCount || 0) + 1;
@@ -95,23 +89,17 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                 if (target.uid) dirtyTroops.set(target.uid, target);
             });
 
-            // 3. Update State & DB
             setEnemies([...enemies]); 
             if (logUpdates.length > 0) setCombatLog(prev => [...prev, ...logUpdates].slice(-8));
             
             updateDoc(combatRef, { enemies: enemies, active: !battleOver }).catch(()=>{});
-            
             dirtyTroops.forEach(t => {
                 updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', t.uid), { 
-                    currentHp: t.currentHp, 
-                    actionGauge: t.actionGauge,
-                    battleKills: t.battleKills || 0,
-                    combatHitCount: t.combatHitCount || 0,
-                    combatAttackCount: t.combatAttackCount || 0
+                    currentHp: t.currentHp, actionGauge: t.actionGauge, battleKills: t.battleKills || 0,
+                    combatHitCount: t.combatHitCount || 0, combatAttackCount: t.combatAttackCount || 0
                 }).catch(()=>{});
             });
 
-            // 4. Check Win/Loss
             const aliveTroops = fighters.filter(t => t.currentHp > 0);
             const aliveEnemies = enemies.filter(e => e.currentHp > 0);
             
@@ -128,28 +116,49 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
 
     const handleVictory = async (survivors) => {
         setGameState('victory');
-        setCombatLog(prev => [...prev, "VICTORY! Found Rewards."]);
+        setCombatLog(prev => [...prev, "VICTORY! Checking for loot..."]);
         const xpGain = 20;
-        let newInv = [...inventory];
+        
+        // Use Ref to get latest inventory
+        let newInv = [...inventoryRef.current];
         
         let dropChance = 0.1;
         const hasGloves = survivors.some(t => t.equipment?.gloves?.name === 'Slimey Gloves');
         if (hasGloves) dropChance *= 2; 
 
-        // Detect Map type by enemy name (simple hack for now)
-        const isMines = enemies[0]?.name.includes("Golem");
+        // Safe check for enemy type
+        const isMines = enemies[0]?.name?.includes("Golem");
 
         if(isMines) {
-            if (Math.random() < dropChance) newInv.push({ id: generateId(), name: "Iron Ore", type: 'resource' });
-            if (Math.random() < 0.2) newInv.push({ id: generateId(), name: "Iron Ore", type: 'resource' });
+            if (Math.random() < dropChance) {
+                newInv.push({ id: generateId(), name: "Iron Ore", type: 'resource' });
+                setCombatLog(prev => [...prev, "+ Iron Ore"]);
+            }
+            if (Math.random() < 0.2) {
+                newInv.push({ id: generateId(), name: "Iron Ore", type: 'resource' });
+                setCombatLog(prev => [...prev, "+ Iron Ore"]);
+            }
         } else {
-             if (Math.random() < dropChance) newInv.push({ id: generateId(), name: "Slime Paste", type: 'resource', desc: "Sticky." });
-             if (Math.random() < 0.05) newInv.push({ id: generateId(), name: "Slimey Gloves", type: 'gloves', stats: { def: 1 }, desc: "Cooking + Combat Bonus" });
-             if (Math.random() < 0.3) newInv.push({ id: generateId(), name: "Dull Sword", type: 'weapon', stats: { ap: 2, maxHp: -5 } });
+             if (Math.random() < dropChance) {
+                 newInv.push({ id: generateId(), name: "Slime Paste", type: 'resource', desc: "Sticky." });
+                 setCombatLog(prev => [...prev, "+ Slime Paste"]);
+             }
+             if (Math.random() < 0.05) {
+                 newInv.push({ id: generateId(), name: "Slimey Gloves", type: 'gloves', stats: { def: 1 }, desc: "Cooking + Combat Bonus" });
+                 setCombatLog(prev => [...prev, "+ Slimey Gloves!"]);
+             }
+             if (Math.random() < 0.3) {
+                 newInv.push({ id: generateId(), name: "Dull Sword", type: 'weapon', stats: { ap: 2, maxHp: -5 } });
+                 setCombatLog(prev => [...prev, "+ Dull Sword"]);
+             }
         }
 
         const updates = survivors.map(async (unit) => {
-            if (unit.currentHp <= 0) return deleteDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', unit.uid));
+            // PERMADEATH CHECK
+            if (unit.currentHp <= 0) {
+                console.log(`Unit ${unit.name} died. Deleting...`);
+                return deleteDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', unit.uid));
+            }
             
             let newXp = (unit.xp || 0) + xpGain;
             let newLevel = unit.level;
@@ -175,7 +184,9 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
 
     const handleDefeat = async (party) => {
         setGameState('defeat');
+        setAutoBattle(false);
         await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combat'), { active: false });
+        // Ensure all are deleted
         await Promise.all(party.map(u => deleteDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', u.uid))));
     };
 
