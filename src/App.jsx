@@ -21,6 +21,7 @@ import Kitchen from './views/Kitchen';
 import Smithing from './views/Smithing';
 import MissionSelect from './views/MissionSelect';
 import Combat from './views/Combat';
+import Inventory from './views/Inventory';
 
 const appId = 'iron-and-oil-web';
 
@@ -54,8 +55,11 @@ export default function App() {
 
     // --- Hooks Logic ---
     useGameLoop(user, troops, inventory, gameState);
-    // CRITICAL UPDATE: Destructure setCombatLog here so we can pass it to MissionSelect
-    const { combatLog, setCombatLog, damageEvents } = useCombat(user, troops, enemies, gameState, setGameState, setEnemies, setView, selectedTroops, inventory, autoBattle, setAutoBattle);
+    
+    // CRITICAL FIX: We need setCombatLog to pass to MissionSelect
+    const { combatLog, setCombatLog, damageEvents } = useCombat(
+        user, troops, enemies, gameState, setGameState, setEnemies, setView, selectedTroops, inventory, autoBattle, setAutoBattle
+    );
 
     // --- Auth & Data ---
     useEffect(() => {
@@ -83,6 +87,7 @@ export default function App() {
         if (!user) return;
         
         const unsubTroops = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'troops'), (snap) => {
+            // Prevent rubber-banding during active combat simulation
             if (gameStateRef.current === 'fighting') return; 
             const t = [];
             snap.forEach(doc => t.push({ ...doc.data(), uid: doc.id }));
@@ -106,6 +111,7 @@ export default function App() {
                     if (data.troopIds) setSelectedTroops(data.troopIds);
                     setGameState('fighting');
                 } else if (gameStateRef.current === 'fighting') {
+                    // If DB says inactive but local is fighting, end fight
                     setGameState('victory');
                 }
             }
@@ -148,12 +154,12 @@ export default function App() {
             <main className="p-4 max-w-2xl mx-auto min-h-full relative">
                 {view === 'barracks' && <Barracks troops={troops} profile={profile} maxTroops={maxTroops} setView={setView} setSelectedUnitId={setSelectedUnitId} />}
                 {view === 'character_sheet' && <CharacterSheet user={user} unit={selectedUnit} inventory={inventory} setView={setView} appId={appId} />}
+                {view === 'inventory' && <Inventory inventory={inventory} user={user} appId={appId} />}
                 {view === 'tavern' && <Tavern tavernState={tavernState} troops={troops} maxTroops={maxTroops} setView={setView} user={user} appId={appId} />}
                 {view === 'skills' && <Skills troops={troops} user={user} appId={appId} />}
                 {view === 'kitchen' && <Kitchen troops={troops} inventory={inventory} user={user} appId={appId} />}
                 {view === 'smithing' && <Smithing troops={troops} inventory={inventory} user={user} appId={appId} />}
                 
-                {/* Fix: Pass setCombatLog to MissionSelect */}
                 {view === 'mission_select' && <MissionSelect 
                     troops={troops} 
                     selectedTroops={selectedTroops} 
@@ -167,7 +173,17 @@ export default function App() {
                     setAutoBattle={setAutoBattle} 
                 />}
                 
-                {view === 'combat' && <Combat troops={troops} enemies={enemies} gameState={gameState} setGameState={setGameState} setView={setView} autoBattle={autoBattle} setAutoBattle={setAutoBattle} combatLog={combatLog} damageEvents={damageEvents} />}
+                {view === 'combat' && <Combat 
+                    troops={troops} 
+                    enemies={enemies} 
+                    gameState={gameState} 
+                    setGameState={setGameState} 
+                    setView={setView} 
+                    autoBattle={autoBattle} 
+                    setAutoBattle={setAutoBattle} 
+                    combatLog={combatLog} 
+                    damageEvents={damageEvents} 
+                />}
             </main>
 
             <Navbar currentView={view} setView={setView} gameState={gameState} />
