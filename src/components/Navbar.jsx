@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, GraduationCap, ChefHat, Sword } from 'lucide-react';
+import { User, GraduationCap, ChefHat, Sword, Hammer } from 'lucide-react';
 
 export default function Navbar({ currentView, setView, gameState }) {
     const NavBtn = ({ view, icon: Icon, label, color }) => (
@@ -12,10 +12,11 @@ export default function Navbar({ currentView, setView, gameState }) {
     );
 
     return (
-        <nav className="fixed bottom-0 w-full bg-slate-800 border-t border-slate-700 flex justify-around p-2 pb-safe z-50">
+        <nav className="fixed bottom-0 w-full bg-slate-800 border-t border-slate-700 flex justify-between px-4 py-2 pb-safe z-50">
             <NavBtn view="barracks" icon={User} label="Base" color="text-amber-500" />
             <NavBtn view="skills" icon={GraduationCap} label="Skills" color="text-purple-500" />
-            <NavBtn view="kitchen" icon={ChefHat} label="Kitchen" color="text-orange-500" />
+            <NavBtn view="kitchen" icon={ChefHat} label="Cook" color="text-orange-500" />
+            <NavBtn view="smithing" icon={Hammer} label="Smith" color="text-gray-400" />
             <button 
                 onClick={() => setView(gameState === 'fighting' ? 'combat' : 'mission_select')} 
                 className={`p-2 rounded flex flex-col items-center gap-1 text-xs ${['mission_select', 'combat'].includes(currentView) ? 'text-red-500' : 'text-slate-500'}`}

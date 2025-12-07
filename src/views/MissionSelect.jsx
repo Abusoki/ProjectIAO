@@ -1,16 +1,19 @@
 import React from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, AlertTriangle, Mountain } from 'lucide-react';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { MISSIONS } from '../config/gameData';
 
 export default function MissionSelect({ troops, selectedTroops, setSelectedTroops, setView, user, appId, setEnemies, setGameState, setCombatLog, setAutoBattle }) {
     
-    const startMission = async () => {
+    const startMission = async (missionKey) => {
         const validSelectedIds = selectedTroops.filter(id => troops.find(t => t.uid === id));
         if (validSelectedIds.length === 0) { 
             setAutoBattle(false); 
             return; 
         }
+        
+        const mission = MISSIONS[missionKey];
         
         // 1. Mark troops
         const updates = validSelectedIds.map(uid => 
@@ -22,17 +25,20 @@ export default function MissionSelect({ troops, selectedTroops, setSelectedTroop
 
         // 2. Create Combat
         const enemyCount = Math.floor(Math.random() * 4) + 1;
-        const newEnemies = Array.from({ length: enemyCount }, (_, i) => ({
-            id: `blob_${i}`, name: `Bloblin ${i+1}`, maxHp: 40, currentHp: 40, ap: 8, def: 0, spd: 8, actionGauge: Math.random() * 50
-        }));
+        const newEnemies = Array.from({ length: enemyCount }, (_, i) => {
+            if(mission.enemyType === 'golem') {
+                 return { id: `golem_${i}`, name: `Rock Golem ${i+1}`, maxHp: 80, currentHp: 80, ap: 15, def: 5, spd: 4, actionGauge: Math.random() * 20 };
+            }
+            return { id: `blob_${i}`, name: `Bloblin ${i+1}`, maxHp: 40, currentHp: 40, ap: 8, def: 0, spd: 8, actionGauge: Math.random() * 50 };
+        });
         
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'system', 'combat'), {
-            active: true, enemies: newEnemies, troopIds: validSelectedIds, log: ["Combat Started!"], tick: 0
+            active: true, enemies: newEnemies, troopIds: validSelectedIds, log: [`Deployed to ${mission.name}`], tick: 0
         });
 
         setEnemies(newEnemies);
         setGameState('fighting');
-        setCombatLog(["Combat Started!"]);
+        setCombatLog([`Deployed to ${mission.name}`]);
         setView('combat');
     };
 
@@ -42,10 +48,12 @@ export default function MissionSelect({ troops, selectedTroops, setSelectedTroop
                 <button onClick={() => { setView('barracks'); setSelectedTroops([]); }} className="text-slate-400 hover:text-white"><ChevronRight className="rotate-180" /></button>
                 <h2 className="text-xl font-bold">Deploy</h2>
             </div>
-            <div className="grid gap-2">
+
+            {/* Squad Select */}
+            <div className="grid gap-2 mb-6">
                 {troops.map(t => {
                     const isSelected = selectedTroops.includes(t.uid);
-                    const busy = t.activity === 'cooking' || t.inCombat;
+                    const busy = t.activity === 'cooking' || t.activity === 'smithing' || t.inCombat;
                     return (
                         <button 
                             key={t.uid} 
@@ -59,7 +67,26 @@ export default function MissionSelect({ troops, selectedTroops, setSelectedTroop
                     )
                 })}
             </div>
-            <button disabled={selectedTroops.length === 0} onClick={startMission} className="w-full bg-red-800 hover:bg-red-700 disabled:opacity-50 text-white font-bold py-4 rounded-lg mt-6 shadow-lg">START OPERATION</button>
+
+            <div className="space-y-3">
+                {/* Forest */}
+                <div className="bg-green-900/20 border border-green-800 p-4 rounded-lg flex justify-between items-center">
+                    <div>
+                        <div className="font-bold text-green-400 flex items-center gap-2"><AlertTriangle size={16}/> Bloblin Forest</div>
+                        <div className="text-xs text-slate-400">Lvl 1 • Easy • Drops Paste</div>
+                    </div>
+                    <button disabled={selectedTroops.length === 0} onClick={() => startMission('forest')} className="bg-slate-700 hover:bg-green-800 px-4 py-2 rounded font-bold text-sm disabled:opacity-50">Go</button>
+                </div>
+
+                {/* Mines */}
+                <div className="bg-stone-800/50 border border-stone-600 p-4 rounded-lg flex justify-between items-center">
+                    <div>
+                        <div className="font-bold text-stone-300 flex items-center gap-2"><Mountain size={16}/> Iron Mines</div>
+                        <div className="text-xs text-slate-400">Lvl 3 • Hard • Drops Ore</div>
+                    </div>
+                    <button disabled={selectedTroops.length === 0} onClick={() => startMission('mines')} className="bg-slate-700 hover:bg-stone-600 px-4 py-2 rounded font-bold text-sm disabled:opacity-50">Go</button>
+                </div>
+            </div>
         </div>
     );
 }
