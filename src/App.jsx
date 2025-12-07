@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { collection, doc, onSnapshot, getDoc, setDoc } from 'firebase/firestore';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { collection, doc, onSnapshot, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { auth, db } from './config/firebase';
 import { generateRecruit } from './utils/mechanics';
 import { TAVERN_REFRESH_MS } from './config/gameData';
@@ -46,7 +46,6 @@ export default function App() {
     const troopsRef = useRef(troops);
     const gameStateRef = useRef(gameState);
 
-    // Keep refs synced for hooks/intervals
     useEffect(() => { troopsRef.current = troops; }, [troops]);
     useEffect(() => { gameStateRef.current = gameState; }, [gameState]);
 
@@ -54,11 +53,9 @@ export default function App() {
     const maxTroops = playerLevel >= 10 ? 4 : 3;
 
     // --- Hooks Logic ---
-    // Handles Passive Regen, Cooking, and Smithing progress
     useGameLoop(user, troops, inventory, gameState);
-    
-    // Handles Combat Loop, Visuals, and Drops
-    const { combatLog, damageEvents } = useCombat(user, troops, enemies, gameState, setGameState, setEnemies, setView, selectedTroops, inventory, autoBattle, setAutoBattle);
+    // CRITICAL UPDATE: Destructure setCombatLog here so we can pass it to MissionSelect
+    const { combatLog, setCombatLog, damageEvents } = useCombat(user, troops, enemies, gameState, setGameState, setEnemies, setView, selectedTroops, inventory, autoBattle, setAutoBattle);
 
     // --- Auth & Data ---
     useEffect(() => {
@@ -81,20 +78,17 @@ export default function App() {
         setShowNameModal(false);
     };
 
-    // --- Data Listeners ---
+    // --- Listeners ---
     useEffect(() => {
         if (!user) return;
         
-        // Troops Listener
         const unsubTroops = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'troops'), (snap) => {
-            // Prevent rubber-banding: Don't sync troops from DB while calculating local combat frames
             if (gameStateRef.current === 'fighting') return; 
             const t = [];
             snap.forEach(doc => t.push({ ...doc.data(), uid: doc.id }));
             setTroops(t);
         });
 
-        // Profile (Inventory/Gold) Listener
         const unsubProfile = onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), (snap) => {
             if (snap.exists()) {
                 setInventory(snap.data().inventory || []);
@@ -104,7 +98,6 @@ export default function App() {
             }
         });
 
-        // System/Combat Listener (Syncs start/end state across devices)
         const unsubBattle = onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'system', 'combat'), (snap) => {
             if (snap.exists()) {
                 const data = snap.data();
@@ -113,13 +106,11 @@ export default function App() {
                     if (data.troopIds) setSelectedTroops(data.troopIds);
                     setGameState('fighting');
                 } else if (gameStateRef.current === 'fighting') {
-                    // DB says fight is over, update local state
                     setGameState('victory');
                 }
             }
         });
 
-        // Tavern Listener
         const unsubTavern = onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'system', 'tavern'), (snap) => {
             if (snap.exists()) setTavernState(snap.data());
             else {
@@ -128,7 +119,6 @@ export default function App() {
             }
         });
         
-        // Heartbeat for offline calculation
         const heartbeat = setInterval(() => {
              updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), { lastOnline: Date.now() }).catch(()=>{});
         }, 15000);
@@ -162,7 +152,21 @@ export default function App() {
                 {view === 'skills' && <Skills troops={troops} user={user} appId={appId} />}
                 {view === 'kitchen' && <Kitchen troops={troops} inventory={inventory} user={user} appId={appId} />}
                 {view === 'smithing' && <Smithing troops={troops} inventory={inventory} user={user} appId={appId} />}
-                {view === 'mission_select' && <MissionSelect troops={troops} selectedTroops={selectedTroops} setSelectedTroops={setSelectedTroops} setView={setView} user={user} appId={appId} setEnemies={setEnemies} setGameState={setGameState} setCombatLog={setCombatLog} setAutoBattle={setAutoBattle} />}
+                
+                {/* Fix: Pass setCombatLog to MissionSelect */}
+                {view === 'mission_select' && <MissionSelect 
+                    troops={troops} 
+                    selectedTroops={selectedTroops} 
+                    setSelectedTroops={setSelectedTroops} 
+                    setView={setView} 
+                    user={user} 
+                    appId={appId} 
+                    setEnemies={setEnemies} 
+                    setGameState={setGameState} 
+                    setCombatLog={setCombatLog} 
+                    setAutoBattle={setAutoBattle} 
+                />}
+                
                 {view === 'combat' && <Combat troops={troops} enemies={enemies} gameState={gameState} setGameState={setGameState} setView={setView} autoBattle={autoBattle} setAutoBattle={setAutoBattle} combatLog={combatLog} damageEvents={damageEvents} />}
             </main>
 
