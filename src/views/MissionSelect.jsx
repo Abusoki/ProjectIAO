@@ -1,52 +1,7 @@
 import React from 'react';
 import { ChevronRight, AlertTriangle, Mountain } from 'lucide-react';
-import { doc, updateDoc, setDoc } from 'firebase/firestore';
-import { db } from '../config/firebase';
-import { MISSIONS } from '../config/gameData';
 
-export default function MissionSelect({ troops, selectedTroops, setSelectedTroops, setView, user, appId, setEnemies, setGameState, setCombatLog, setAutoBattle }) {
-    
-    const startMission = async (missionKey) => {
-        const validSelectedIds = selectedTroops.filter(id => troops.find(t => t.uid === id));
-        if (validSelectedIds.length === 0) { 
-            setAutoBattle(false); 
-            return; 
-        }
-        
-        const mission = MISSIONS[missionKey];
-        
-        // 1. Mark troops as inCombat
-        const updates = validSelectedIds.map(uid => 
-            updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', uid), { 
-                inCombat: true, actionGauge: 0, battleKills: 0, combatHitCount: 0, combatAttackCount: 0
-            })
-        );
-        await Promise.all(updates);
-
-        // 2. Create Combat Session in DB
-        // Scale enemy count slightly based on squad size? (Optional, kept random 1-4 for now)
-        const enemyCount = Math.floor(Math.random() * 4) + 1;
-        const newEnemies = Array.from({ length: enemyCount }, (_, i) => {
-            if(mission.enemyType === 'golem') {
-                 return { id: `golem_${i}`, name: `Rock Golem ${i+1}`, maxHp: 80, currentHp: 80, ap: 15, def: 5, spd: 4, actionGauge: Math.random() * 20 };
-            }
-            return { id: `blob_${i}`, name: `Bloblin ${i+1}`, maxHp: 40, currentHp: 40, ap: 8, def: 0, spd: 8, actionGauge: Math.random() * 50 };
-        });
-        
-        await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'system', 'combat'), {
-            active: true, enemies: newEnemies, troopIds: validSelectedIds, log: [`Deployed to ${mission.name}`], tick: 0
-        });
-
-        // 3. Update Local State
-        setEnemies(newEnemies);
-        setGameState('fighting');
-        
-        // Use the prop to set the log instead of crashing
-        setCombatLog([`Deployed to ${mission.name}`]);
-        
-        setView('combat');
-    };
-
+export default function MissionSelect({ troops, selectedTroops, setSelectedTroops, setView, startMission }) {
     return (
         <div className="space-y-4">
             <div className="flex items-center gap-2 mb-4">
@@ -63,7 +18,7 @@ export default function MissionSelect({ troops, selectedTroops, setSelectedTroop
                         <button 
                             key={t.uid} 
                             disabled={busy}
-                            // CHANGE IS HERE: Changed "p.length < 2" to "p.length < 3"
+                            // Cap selection at 3 troops
                             onClick={() => setSelectedTroops(p => isSelected ? p.filter(id => id !== t.uid) : p.length < 3 ? [...p, t.uid] : p)}
                             className={`p-3 rounded-lg border flex justify-between items-center ${isSelected ? 'bg-amber-900/40 border-amber-600' : 'bg-slate-800 border-slate-700'} ${busy ? 'opacity-50' : ''}`}
                         >
@@ -75,7 +30,7 @@ export default function MissionSelect({ troops, selectedTroops, setSelectedTroop
             </div>
 
             <div className="space-y-3">
-                {/* Forest Mission */}
+                {/* Forest */}
                 <div className="bg-green-900/20 border border-green-800 p-4 rounded-lg flex justify-between items-center">
                     <div>
                         <div className="font-bold text-green-400 flex items-center gap-2"><AlertTriangle size={16}/> Bloblin Forest</div>
@@ -84,7 +39,7 @@ export default function MissionSelect({ troops, selectedTroops, setSelectedTroop
                     <button disabled={selectedTroops.length === 0} onClick={() => startMission('forest')} className="bg-slate-700 hover:bg-green-800 px-4 py-2 rounded font-bold text-sm disabled:opacity-50">Go</button>
                 </div>
 
-                {/* Mines Mission */}
+                {/* Mines */}
                 <div className="bg-stone-800/50 border border-stone-600 p-4 rounded-lg flex justify-between items-center">
                     <div>
                         <div className="font-bold text-stone-300 flex items-center gap-2"><Mountain size={16}/> Iron Mines</div>
