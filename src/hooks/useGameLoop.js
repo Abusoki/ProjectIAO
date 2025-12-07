@@ -127,4 +127,4 @@ export function useGameLoop(user, troops, inventory, gameState) {
         }, 1000);
         return () => clearInterval(interval);
     }, [user, troops, inventory]);
-}
+  }
