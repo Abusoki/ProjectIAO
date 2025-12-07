@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, doc, onSnapshot, getDoc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from './config/firebase';
 import { generateRecruit } from './utils/mechanics';
@@ -56,11 +56,30 @@ export default function App() {
     const playerLevel = troops.reduce((acc, t) => acc + t.level, 0);
     const maxTroops = playerLevel >= 10 ? 4 : 3;
 
+    // --- State Wrapper for Cleanup ---
+    const handleGameStateChange = (newState) => {
+        setGameState(newState);
+        // If returning to idle (leaving battle manually), force cleanup troops
+        if (newState === 'idle') {
+            const activeTroops = troopsRef.current.filter(t => t.inCombat);
+            if (activeTroops.length > 0) {
+                activeTroops.forEach(t => {
+                    updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', t.uid), { 
+                        inCombat: false, actionGauge: 0 
+                    }).catch(e => console.error("Cleanup error", e));
+                });
+            }
+            // Ensure system combat is off
+            updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'system', 'combat'), { active: false })
+                .catch(e => console.error("Cleanup error", e));
+        }
+    };
+
     // --- Hooks Logic ---
     useGameLoop(user, troops, inventory, gameState);
     
     const { combatLog, setCombatLog, damageEvents } = useCombat(
-        user, troops, enemies, gameState, setGameState, setEnemies, setView, selectedTroops, inventory, autoBattle, setAutoBattle
+        user, troops, enemies, gameState, handleGameStateChange, setEnemies, setView, selectedTroops, inventory, autoBattle, setAutoBattle
     );
 
     // --- MAIN COMBAT START FUNCTION ---
@@ -223,7 +242,7 @@ export default function App() {
                     user={user} 
                     appId={appId} 
                     setEnemies={setEnemies} 
-                    setGameState={setGameState} 
+                    setGameState={gameState} 
                     setCombatLog={setCombatLog} 
                     setAutoBattle={setAutoBattle}
                     startMission={startCombat}
@@ -233,7 +252,7 @@ export default function App() {
                     troops={troops} 
                     enemies={enemies} 
                     gameState={gameState} 
-                    setGameState={setGameState} 
+                    setGameState={handleGameStateChange} 
                     setView={setView} 
                     autoBattle={autoBattle} 
                     setAutoBattle={setAutoBattle} 
