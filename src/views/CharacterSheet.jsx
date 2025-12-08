@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronRight, UserMinus, Heart, Sword, Shield, Zap, Utensils, Scroll, Skull, Hand, Shirt, Footprints } from 'lucide-react';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -7,6 +7,14 @@ import { LEVEL_XP_CURVE, COOKING_XP_CURVE } from '../config/gameData';
 import ProgressBar from '../components/ui/ProgressBar';
 
 export default function CharacterSheet({ user, unit, inventory, setView, appId }) {
+    const [editingName, setEditingName] = useState(false);
+    const [nameInput, setNameInput] = useState('');
+    const [savingName, setSavingName] = useState(false);
+
+    useEffect(() => {
+        if (unit) setNameInput(unit.name || '');
+    }, [unit]);
+
     if (!unit) return null;
 
     const stats = getEffectiveStats(unit);
@@ -52,6 +60,25 @@ export default function CharacterSheet({ user, unit, inventory, setView, appId }
         ]);
     };
 
+    const saveName = async () => {
+        const trimmed = (nameInput || '').trim();
+        if (!trimmed) {
+            alert('Name cannot be empty.');
+            return;
+        }
+        if (!user) return;
+        try {
+            setSavingName(true);
+            await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', unit.uid), { name: trimmed });
+            setEditingName(false);
+        } catch (e) {
+            console.error('Failed to save name', e);
+            alert('Failed to save name. See console for details.');
+        } finally {
+            setSavingName(false);
+        }
+    };
+
     return (
         <div className="space-y-4 animate-fade-in">
             {/* Header / Nav */}
@@ -59,9 +86,41 @@ export default function CharacterSheet({ user, unit, inventory, setView, appId }
                 <button onClick={() => setView('barracks')} className="text-slate-400 hover:text-white flex items-center gap-1 text-sm">
                     <ChevronRight className="rotate-180 w-4 h-4" /> Back
                 </button>
-                <button onClick={dismissUnit} className="text-red-500 hover:text-red-400 text-xs flex items-center gap-1">
-                    <UserMinus size={12}/> Dismiss
-                </button>
+                <div className="flex items-center gap-3">
+                    {editingName ? (
+                        <div className="flex items-center gap-2">
+                            <input
+                                value={nameInput}
+                                onChange={e => setNameInput(e.target.value)}
+                                className="bg-slate-900 p-1 rounded border border-slate-700 text-sm"
+                                maxLength={32}
+                                placeholder="Unit name"
+                            />
+                            <button
+                                onClick={saveName}
+                                disabled={savingName}
+                                className="px-2 py-1 bg-amber-600 hover:bg-amber-500 rounded text-sm font-bold"
+                            >
+                                Save
+                            </button>
+                            <button
+                                onClick={() => { setEditingName(false); setNameInput(unit.name || ''); }}
+                                className="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-sm"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    ) : (
+                        <>
+                            <button onClick={() => setEditingName(true)} className="text-sm bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded">
+                                Rename
+                            </button>
+                            <button onClick={dismissUnit} className="text-red-500 hover:text-red-400 text-xs flex items-center gap-1">
+                                <UserMinus size={12}/> Dismiss
+                            </button>
+                        </>
+                    )}
+                </div>
             </div>
 
             {/* Main Stats Card */}
@@ -101,12 +160,12 @@ export default function CharacterSheet({ user, unit, inventory, setView, appId }
             <div className="bg-slate-800 rounded-lg border border-slate-700 p-4">
                 <h3 className="font-bold text-slate-300 mb-4 flex items-center gap-2"><Shirt size={16}/> Equipment</h3>
                 <div className="grid grid-cols-4 gap-2">
-                    {[
+                    {{
                         { slot: 'mainHand', icon: <Sword size={16}/> },
                         { slot: 'gloves', icon: <Hand size={16}/> },
                         { slot: 'cape', icon: <Shirt size={16}/> },
                         { slot: 'boots', icon: <Footprints size={16}/> }
-                    ].map(({slot, icon}) => {
+                    }.map(({slot, icon}) => {
                         const item = unit.equipment?.[slot];
                         return (
                             <div key={slot} className="aspect-square bg-slate-900 border border-slate-600 rounded flex flex-col items-center justify-center relative group">
