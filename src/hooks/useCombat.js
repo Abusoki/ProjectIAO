@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { doc, updateDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { getEffectiveStats } from '../utils/mechanics';
 import { LEVEL_XP_CURVE } from '../config/gameData';
@@ -20,6 +20,23 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
         setTimeout(() => {
             setDamageEvents(prev => prev.filter(e => e.id !== id));
         }, 1000);
+    };
+
+    // Helper: final cleanup to ensure no troop remains marked inCombat=true
+    const cleanupInCombatFlags = async () => {
+        if (!user) return;
+        try {
+            const troopsQ = query(collection(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops'), where('inCombat', '==', true));
+            const snap = await getDocs(troopsQ);
+            const promises = [];
+            snap.forEach(d => {
+                // When a troop doc still exists and is inCombat, reset its flags
+                promises.push(updateDoc(d.ref, { inCombat: false, actionGauge: 0 }).catch(()=>{}));
+            });
+            await Promise.all(promises);
+        } catch (e) {
+            console.error('Failed cleanup inCombat flags', e);
+        }
     };
 
     useEffect(() => {
@@ -226,6 +243,9 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
         await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'profile', 'data'), { gold: (user.gold || 0) + 15, inventory: newInv });
         await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combat'), { active: false });
         await Promise.all(updates);
+
+        // Final safety cleanup to ensure no troop remains flagged as inCombat
+        await cleanupInCombatFlags();
     };
 
     const handleDefeat = async (party) => {
@@ -234,6 +254,8 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
         await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combat'), { active: false });
         // Ensure all are deleted
         await Promise.all(party.map(u => deleteDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', u.uid))));
+        // Final safety cleanup for any remaining troop docs
+        await cleanupInCombatFlags();
     };
 
     return { combatLog, setCombatLog, damageEvents };

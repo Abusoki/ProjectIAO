@@ -3,20 +3,32 @@
   "WorkspaceRootPath": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\firestore.indexes.json||{3B902123-F8A7-4915-9F01-361F908088D0}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:firestore.indexes.json||{3B902123-F8A7-4915-9F01-361F908088D0}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\hooks\\useCombat.js||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\hooks\\useCombat.js||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\MissionSelect.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\views\\MissionSelect.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\App.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\App.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\config\\gameData.js||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\config\\gameData.js||{3B902123-F8A7-4915-9F01-361F908088D0}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\ProfilesSearch.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\views\\ProfilesSearch.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\components\\Navbar.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\components\\Navbar.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\firestore.indexes.json||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:firestore.indexes.json||{3B902123-F8A7-4915-9F01-361F908088D0}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\App.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\App.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\components\\Navbar.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\components\\Navbar.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\FriendsInbox.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}",
@@ -38,7 +50,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -50,7 +62,45 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "MissionSelect.jsx",
+              "DocumentMoniker": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\MissionSelect.jsx",
+              "RelativeDocumentMoniker": "src\\views\\MissionSelect.jsx",
+              "ToolTip": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\MissionSelect.jsx",
+              "RelativeToolTip": "src\\views\\MissionSelect.jsx",
+              "ViewState": "AgIAAFEAAAAAAAAAAAAowAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2025-12-08T03:06:51.092Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "useCombat.js",
+              "DocumentMoniker": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\hooks\\useCombat.js",
+              "RelativeDocumentMoniker": "src\\hooks\\useCombat.js",
+              "ToolTip": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\hooks\\useCombat.js",
+              "RelativeToolTip": "src\\hooks\\useCombat.js",
+              "ViewState": "AgIAAAsAAAAAAAAAAAAowK4AAAAdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-12-08T03:04:59.068Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "gameData.js",
+              "DocumentMoniker": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\config\\gameData.js",
+              "RelativeDocumentMoniker": "src\\config\\gameData.js",
+              "ToolTip": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\config\\gameData.js",
+              "RelativeToolTip": "src\\config\\gameData.js",
+              "ViewState": "AgIAAAsAAAAAAAAAAAAAwB4AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-12-08T03:04:28.153Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
               "Title": "firestore.indexes.json",
               "DocumentMoniker": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\firestore.indexes.json",
               "RelativeDocumentMoniker": "firestore.indexes.json",
@@ -58,12 +108,11 @@
               "RelativeToolTip": "firestore.indexes.json",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-12-08T02:41:06.127Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-08T02:41:06.127Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 6,
               "Title": "Navbar.jsx",
               "DocumentMoniker": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\components\\Navbar.jsx",
               "RelativeDocumentMoniker": "src\\components\\Navbar.jsx",
@@ -71,12 +120,11 @@
               "RelativeToolTip": "src\\components\\Navbar.jsx",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAABWAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2025-12-08T02:38:00.543Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-08T02:38:00.543Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 7,
               "Title": "FriendsInbox.jsx",
               "DocumentMoniker": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\FriendsInbox.jsx",
               "RelativeDocumentMoniker": "src\\views\\FriendsInbox.jsx",
@@ -84,25 +132,23 @@
               "RelativeToolTip": "src\\views\\FriendsInbox.jsx",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAGoAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2025-12-08T02:34:12.83Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-08T02:34:12.83Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 2,
               "Title": "App.jsx",
               "DocumentMoniker": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\App.jsx",
               "RelativeDocumentMoniker": "src\\App.jsx",
               "ToolTip": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\App.jsx",
               "RelativeToolTip": "src\\App.jsx",
-              "ViewState": "AgIAAAYAAAAAAAAAAAAuwCQAAAAoAAAAAAAAAA==",
+              "ViewState": "AgIAAHQAAAAAAAAAAAAowFUAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2025-12-08T02:32:32.818Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-08T02:32:32.818Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 9,
               "Title": "ProfileEdit.jsx",
               "DocumentMoniker": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\ProfileEdit.jsx",
               "RelativeDocumentMoniker": "src\\views\\ProfileEdit.jsx",
@@ -110,12 +156,11 @@
               "RelativeToolTip": "src\\views\\ProfileEdit.jsx",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAGIAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2025-12-08T02:32:18.996Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-08T02:32:18.996Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 8,
               "Title": "ProfilePublic.jsx",
               "DocumentMoniker": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\ProfilePublic.jsx",
               "RelativeDocumentMoniker": "src\\views\\ProfilePublic.jsx",
@@ -123,21 +168,19 @@
               "RelativeToolTip": "src\\views\\ProfilePublic.jsx",
               "ViewState": "AgIAAB0AAAAAAAAAAAAuwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2025-12-08T02:30:00.219Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-08T02:30:00.219Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 4,
               "Title": "ProfilesSearch.jsx",
               "DocumentMoniker": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\ProfilesSearch.jsx",
               "RelativeDocumentMoniker": "src\\views\\ProfilesSearch.jsx",
               "ToolTip": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\ProfilesSearch.jsx",
               "RelativeToolTip": "src\\views\\ProfilesSearch.jsx",
-              "ViewState": "AgIAAAgAAAAAAAAAAAAUwAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAHUAAAAAAAAAAAAawAkAAAAKAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2025-12-08T02:29:45.971Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-08T02:29:45.971Z"
             }
           ]
         }
