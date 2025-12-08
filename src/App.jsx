@@ -1,4 +1,4 @@
-    import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, doc, onSnapshot, getDoc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from './config/firebase';
@@ -29,19 +29,19 @@ const appId = 'iron-and-oil-web';
 export default function App() {
     const [user, setUser] = useState(null);
     const [profile, setProfile] = useState(null);
-    const [view, setView] = useState('barracks');
+    const [view, setView] = useState('barracks'); 
     const [troops, setTroops] = useState([]);
     const [inventory, setInventory] = useState([]);
     const [gold, setGold] = useState(0);
     const [tavernState, setTavernState] = useState({ recruits: [], nextRefresh: 0 });
     const [selectedUnitId, setSelectedUnitId] = useState(null);
-
+    
     // Combat State
     const [gameState, setGameState] = useState('idle');
     const [selectedTroops, setSelectedTroops] = useState([]);
     const [enemies, setEnemies] = useState([]);
     const [autoBattle, setAutoBattle] = useState(false);
-
+    
     // Auto-battle tracking
     const [lastMissionKey, setLastMissionKey] = useState(null);
 
@@ -64,8 +64,8 @@ export default function App() {
             const activeTroops = troopsRef.current.filter(t => t.inCombat);
             if (activeTroops.length > 0) {
                 activeTroops.forEach(t => {
-                    updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', t.uid), {
-                        inCombat: false, actionGauge: 0
+                    updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', t.uid), { 
+                        inCombat: false, actionGauge: 0 
                     }).catch(e => console.error("Cleanup error", e));
                 });
             }
@@ -76,7 +76,7 @@ export default function App() {
 
     // --- Hooks Logic ---
     useGameLoop(user, troops, inventory, gameState);
-
+    
     const { combatLog, setCombatLog, damageEvents } = useCombat(
         user, troops, enemies, gameState, handleGameStateChange, setEnemies, setView, selectedTroops, inventory, autoBattle, setAutoBattle
     );
@@ -85,19 +85,19 @@ export default function App() {
     const startCombat = async (missionKey) => {
         const currentTroops = troopsRef.current;
         const validSelectedIds = selectedTroops.filter(id => currentTroops.find(t => t.uid === id));
-
-        if (validSelectedIds.length === 0) {
-            setAutoBattle(false);
-            return;
+        
+        if (validSelectedIds.length === 0) { 
+            setAutoBattle(false); 
+            return; 
         }
-
+        
         setLastMissionKey(missionKey);
 
         const mission = MISSIONS[missionKey];
-
+        
         // 1. Mark troops as inCombat
-        const updates = validSelectedIds.map(uid =>
-            updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', uid), {
+        const updates = validSelectedIds.map(uid => 
+            updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', uid), { 
                 inCombat: true, actionGauge: 0, battleKills: 0, combatHitCount: 0, combatAttackCount: 0
             })
         );
@@ -106,12 +106,12 @@ export default function App() {
         // 2. Create Combat Session in DB
         const enemyCount = Math.floor(Math.random() * 4) + 1;
         const newEnemies = Array.from({ length: enemyCount }, (_, i) => {
-            if (mission.enemyType === 'golem') {
-                return { id: `golem_${i}`, name: `Rock Golem ${i+1}`, maxHp: 80, currentHp: 80, ap: 15, def: 5, spd: 4, actionGauge: Math.random() * 20 };
+            if(mission.enemyType === 'golem') {
+                 return { id: `golem_${i}`, name: `Rock Golem ${i+1}`, maxHp: 80, currentHp: 80, ap: 15, def: 5, spd: 4, actionGauge: Math.random() * 20 };
             }
             return { id: `blob_${i}`, name: `Bloblin ${i+1}`, maxHp: 40, currentHp: 40, ap: 8, def: 0, spd: 8, actionGauge: Math.random() * 50 };
         });
-
+        
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'system', 'combat'), {
             active: true, enemies: newEnemies, troopIds: validSelectedIds, log: [`Deployed to ${mission.name}`], tick: 0
         });
@@ -126,9 +126,9 @@ export default function App() {
     // --- Auto Battle Trigger ---
     useEffect(() => {
         if (gameState === 'victory' && autoBattle && lastMissionKey) {
-            const timer = setTimeout(() => {
+            const timer = setTimeout(() => { 
                 if (view === 'combat' && autoBattle) {
-                    startCombat(lastMissionKey);
+                    startCombat(lastMissionKey); 
                 }
             }, 2500);
             return () => clearTimeout(timer);
@@ -159,9 +159,9 @@ export default function App() {
     // --- Listeners ---
     useEffect(() => {
         if (!user) return;
-
+        
         const unsubTroops = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'troops'), (snap) => {
-            if (gameStateRef.current === 'fighting') return;
+            if (gameStateRef.current === 'fighting') return; 
             const t = [];
             snap.forEach(doc => t.push({ ...doc.data(), uid: doc.id }));
             setTroops(t);
@@ -196,13 +196,14 @@ export default function App() {
                 setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'system', 'tavern'), { recruits: newRecruits, nextRefresh: Date.now() + TAVERN_REFRESH_MS });
             }
         });
-
+        
         const heartbeat = setInterval(() => {
-            updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), { lastOnline: Date.now() }).catch(() => { });
+             updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), { lastOnline: Date.now() }).catch(()=>{});
         }, 15000);
 
         return () => { unsubTroops(); unsubProfile(); unsubTavern(); unsubBattle(); clearInterval(heartbeat); };
     }, [user]);
+
 
     if (!user) return <AuthScreen />;
 
@@ -225,7 +226,7 @@ export default function App() {
             <main className="p-4 max-w-2xl mx-auto min-h-full relative">
                 {view === 'barracks' && <Barracks troops={troops} profile={profile} maxTroops={maxTroops} setView={setView} setSelectedUnitId={setSelectedUnitId} />}
                 {view === 'character_sheet' && <CharacterSheet user={user} unit={selectedUnit} inventory={inventory} setView={setView} appId={appId} />}
-                {view === 'inventory' && <Inventory inventory={inventory} user={user} appId={appId} />}
+                {view === 'inventory' && <Inventory inventory={inventory} troops={troops} user={user} appId={appId} />}
                 {view === 'tavern' && <Tavern tavernState={tavernState} troops={troops} maxTroops={maxTroops} setView={setView} user={user} appId={appId} />}
                 {view === 'skills' && <Skills troops={troops} user={user} appId={appId} />}
                 {view === 'kitchen' && <Kitchen troops={troops} inventory={inventory} user={user} appId={appId} />}
