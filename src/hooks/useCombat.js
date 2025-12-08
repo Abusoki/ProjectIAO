@@ -159,10 +159,11 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
         const hasGloves = survivors.some(t => t.equipment?.gloves?.name === 'Slimey Gloves');
         if (hasGloves) dropChance *= 2; 
 
-        // Safe check for enemy type
-        const isMines = enemies[0]?.name?.includes("Golem");
+        // Determine enemy type by id or name
+        const leadEnemy = enemies[0];
+        const enemyType = leadEnemy?.id?.split('_')[0] || (leadEnemy?.name || '').toLowerCase();
 
-        if(isMines) {
+        if (enemyType.includes('golem') || enemyType.includes('golem')) {
             if (Math.random() < dropChance) {
                 newInv.push({ id: generateId(), name: "Iron Ore", type: 'resource' });
                 setCombatLog(prev => [...prev, "+ Iron Ore"]);
@@ -170,6 +171,18 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             if (Math.random() < 0.2) {
                 newInv.push({ id: generateId(), name: "Iron Ore", type: 'resource' });
                 setCombatLog(prev => [...prev, "+ Iron Ore"]);
+            }
+        } else if (enemyType.includes('rat')) {
+            // Rat drops
+            if (Math.random() < 0.15) {
+                newInv.push({ id: generateId(), name: "Rat Fur Cape", type: 'cape', desc: "A cape made from rat fur." });
+                setCombatLog(prev => [...prev, "+ Rat Fur Cape"]);
+            }
+        } else if (enemyType.includes('ice_imp') || enemyType.includes('ice')) {
+            // Ice Imp drops
+            if (Math.random() < 0.12) {
+                newInv.push({ id: generateId(), name: "Ice Boots", type: 'boots', stats: { spd: 2, def: 1 }, desc: "Boots of cold speed." });
+                setCombatLog(prev => [...prev, "+ Ice Boots"]);
             }
         } else {
              if (Math.random() < dropChance) {

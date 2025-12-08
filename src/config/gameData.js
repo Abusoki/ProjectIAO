@@ -29,9 +29,79 @@ export const SKILLS = {
     }
 };
 
+// New mission definitions grouped by allowed party size
 export const MISSIONS = {
-    forest: { name: "Bloblin Forest", level: 1, desc: "Sticky enemies. Drops Paste.", enemyType: "blob" },
-    mines: { name: "Iron Mines", level: 3, desc: "Hard enemies. Drops Ore.", enemyType: "golem" }
+    // 1-character content
+    training_dummy: {
+        name: "Training Dummy",
+        level: 1,
+        desc: "Practice on a stationary dummy. Does 1 damage back. No exp or loot.",
+        enemyType: "dummy",
+        minParty: 1,
+        maxParty: 1,
+        spawnMin: 1,
+        spawnMax: 1,
+        noXp: true,
+        noLoot: true
+    },
+
+    // 2-character content
+    rat_showdown: {
+        name: "Rat Showdown",
+        level: 2,
+        desc: "Face 2–3 aggressive rats. Small chance for a Rat Fur Cape.",
+        enemyType: "rat",
+        minParty: 2,
+        maxParty: 2,
+        spawnMin: 2,
+        spawnMax: 3,
+        drops: [
+            { id: 'rat_fur_cape', name: 'Rat Fur Cape', type: 'cape', chance: 0.15, desc: 'Light cape made from rat fur.' }
+        ]
+    },
+
+    // 3-character content (existing zones)
+    forest: {
+        name: "Bloblin Forest",
+        level: 1,
+        desc: "Sticky enemies. Drops Paste.",
+        enemyType: "blob",
+        minParty: 3,
+        maxParty: 3,
+        spawnMin: 1,
+        spawnMax: 4,
+        drops: [
+            { id: 'slime_paste', name: 'Slime Paste', type: 'resource', chance: 0.1 }
+        ]
+    },
+    mines: {
+        name: "Iron Mines",
+        level: 3,
+        desc: "Hard enemies. Drops Ore.",
+        enemyType: "golem",
+        minParty: 3,
+        maxParty: 3,
+        spawnMin: 1,
+        spawnMax: 4,
+        drops: [
+            { id: 'iron_ore', name: 'Iron Ore', type: 'resource', chance: 0.1 }
+        ]
+    },
+
+    // 4-character content
+    ice_cave: {
+        name: "Ice Cave of the Southern Pond",
+        level: 5,
+        desc: "Face 3–5 Ice Imps. Drops Ice Boots with +2 SPD, +1 DEF.",
+        enemyType: "ice_imp",
+        minParty: 4,
+        maxParty: 4,
+        spawnMin: 3,
+        spawnMax: 5,
+        drops: [
+            { id: 'ice_boots', name: 'Ice Boots', type: 'boots', chance: 0.12, stats: { spd: 2, def: 1 }, desc: 'Boots of chilled agility.' }
+        ]
+    }
 };
 
 export const SMITHING_RECIPES = [

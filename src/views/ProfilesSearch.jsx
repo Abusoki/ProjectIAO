@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Search, UserPlus, UserCheck } from 'lucide-react';
 import {
   collectionGroup,
+  collection,
   query,
   where,
   orderBy,
@@ -20,16 +21,74 @@ export default function ProfilesSearch({ user, appId, setView, setProfileUid }) 
   const [results, setResults] = useState([]);
   const [busy, setBusy] = useState(false);
 
+  // Normalization helper
+  const normalize = (s) => (s || '').toString().trim().normalize('NFKC').toLowerCase();
+
+  // Chunk helper to throttle parallel fetches
+  const chunk = (arr, size) => {
+    const out = [];
+    for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+    return out;
+  };
+
+  // Fallback: read per-user meta documents and filter client-side.
+  // Use batching/chunking to avoid blasting Firestore.
+  const fallbackFetchAndFilter = async (qLower) => {
+    // Try cached results in sessionStorage first (simple cache)
+    try {
+      const cacheKey = `profiles_meta_cache_v1`;
+      const raw = sessionStorage.getItem(cacheKey);
+      let usersMeta = null;
+      if (raw) usersMeta = JSON.parse(raw);
+
+      if (!usersMeta) {
+        // list user docs under artifacts/{appId}/users
+        const usersRef = collection(db, 'artifacts', appId, 'users');
+        const usersSnap = await getDocs(usersRef);
+        const uids = usersSnap.docs.map(d => d.id);
+
+        // fetch meta docs in batches (50 concurrent)
+        usersMeta = [];
+        const batches = chunk(uids, 50);
+        for (const b of batches) {
+          const prom = b.map(uid => getDoc(doc(db, 'artifacts', appId, 'users', uid, 'profile', 'meta'))
+            .then(s => ({ uid, data: s.exists() ? s.data() : null }))
+            .catch(() => ({ uid, data: null }))
+          );
+          const res = await Promise.all(prom);
+          res.forEach(r => {
+            if (r.data) usersMeta.push({ uid: r.uid, ...r.data });
+          });
+          // small pause to reduce burst pressure
+          await new Promise(r => setTimeout(r, 100));
+        }
+        // cache for this session
+        try { sessionStorage.setItem(cacheKey, JSON.stringify(usersMeta)); } catch {}
+      }
+
+      // filter by normalized name prefix
+      const filtered = usersMeta.filter(m => {
+        const nameLower = (m.displayNameLower || normalize(m.displayName));
+        return nameLower && nameLower.startsWith(qLower);
+      }).slice(0, 50);
+
+      setResults(filtered);
+    } catch (e) {
+      console.error('Fallback search failed', e);
+      setResults([]);
+    }
+  };
+
   const performSearch = async () => {
     const q = (term || '').trim();
     if (q.length === 0) return setResults([]);
     setLoading(true);
+    const qLower = normalize(q);
+
+    // First try the indexed collectionGroup query (fast, but may error if index missing)
     try {
-      // Use normalized, lowercase field for case-insensitive prefix search
-      const qLower = q.toLowerCase();
       const cg = collectionGroup(db, 'meta');
       const qUpperBound = qLower + '\uf8ff';
-      // Query on displayNameLower (must be written by ProfileEdit/saveName)
       const qry = query(cg, where('displayNameLower', '>=', qLower), where('displayNameLower', '<=', qUpperBound), orderBy('displayNameLower'), limit(50));
       const snap = await getDocs(qry);
       const rows = [];
@@ -41,8 +100,9 @@ export default function ProfilesSearch({ user, appId, setView, setProfileUid }) 
       });
       setResults(rows);
     } catch (e) {
-      console.error('Search error', e);
-      setResults([]);
+      // If index not available (or other errors), fall back to client-side scan
+      console.warn('Indexed search failed, falling back to client-side scan:', e.message || e);
+      await fallbackFetchAndFilter(qLower);
     } finally {
       setLoading(false);
     }

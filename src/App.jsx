@@ -87,7 +87,24 @@ export default function App() {
     // --- MAIN COMBAT START FUNCTION ---
     const startCombat = async (missionKey) => {
         const currentTroops = troopsRef.current;
-        const validSelectedIds = selectedTroops.filter(id => currentTroops.find(t => t.uid === id));
+        let validSelectedIds = selectedTroops.filter(id => currentTroops.find(t => t.uid === id));
+        
+        const mission = MISSIONS[missionKey];
+        if (!mission) {
+            console.error("Unknown mission key:", missionKey);
+            return;
+        }
+
+        // Party size checks
+        if (validSelectedIds.length < (mission.minParty || 1)) {
+            alert(`This mission requires at least ${mission.minParty} character(s).`);
+            setAutoBattle(false);
+            return;
+        }
+        if (validSelectedIds.length > (mission.maxParty || 4)) {
+            // Trim to allowed party size
+            validSelectedIds = validSelectedIds.slice(0, mission.maxParty);
+        }
         
         if (validSelectedIds.length === 0) { 
             setAutoBattle(false); 
@@ -96,8 +113,6 @@ export default function App() {
         
         setLastMissionKey(missionKey);
 
-        const mission = MISSIONS[missionKey];
-        
         // 1. Mark troops as inCombat
         const updates = validSelectedIds.map(uid => 
             updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', uid), { 
@@ -107,14 +122,32 @@ export default function App() {
         await Promise.all(updates);
 
         // 2. Create Combat Session in DB
-        const enemyCount = Math.floor(Math.random() * 4) + 1;
+        // Determine enemy count from mission if provided
+        const minSpawn = mission.spawnMin || 1;
+        const maxSpawn = mission.spawnMax || Math.max(1, Math.floor(Math.random() * 4) + 1);
+        const enemyCount = Math.floor(Math.random() * (maxSpawn - minSpawn + 1)) + minSpawn;
+
         const newEnemies = Array.from({ length: enemyCount }, (_, i) => {
-            if(mission.enemyType === 'golem') {
-                 return { id: `golem_${i}`, name: `Rock Golem ${i+1}`, maxHp: 80, currentHp: 80, ap: 15, def: 5, spd: 4, actionGauge: Math.random() * 20 };
+            const mk = mission.enemyType;
+            if (mk === 'golem') {
+                return { id: `golem_${i}`, name: `Rock Golem ${i+1}`, maxHp: 80, currentHp: 80, ap: 15, def: 5, spd: 4, actionGauge: Math.random() * 20 };
             }
-            return { id: `blob_${i}`, name: `Bloblin ${i+1}`, maxHp: 40, currentHp: 40, ap: 8, def: 0, spd: 8, actionGauge: Math.random() * 50 };
+            if (mk === 'blob') {
+                return { id: `blob_${i}`, name: `Bloblin ${i+1}`, maxHp: 40, currentHp: 40, ap: 8, def: 0, spd: 8, actionGauge: Math.random() * 50 };
+            }
+            if (mk === 'rat') {
+                return { id: `rat_${i}`, name: `Giant Rat ${i+1}`, maxHp: 22, currentHp: 22, ap: 4, def: 0, spd: 10, actionGauge: Math.random() * 50 };
+            }
+            if (mk === 'ice_imp') {
+                return { id: `ice_imp_${i}`, name: `Ice Imp ${i+1}`, maxHp: 50, currentHp: 50, ap: 10, def: 2, spd: 10, actionGauge: Math.random() * 40 };
+            }
+            if (mk === 'dummy') {
+                return { id: `dummy_0`, name: `Training Dummy`, maxHp: 100, currentHp: 100, ap: 1, def: 9999, spd: 0, actionGauge: 0 };
+            }
+            // fallback
+            return { id: `mob_${i}`, name: `Foe ${i+1}`, maxHp: 30, currentHp: 30, ap: 6, def: 0, spd: 8, actionGauge: Math.random() * 50 };
         });
-        
+
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'system', 'combat'), {
             active: true, enemies: newEnemies, troopIds: validSelectedIds, log: [`Deployed to ${mission.name}`], tick: 0
         });
