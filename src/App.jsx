@@ -23,6 +23,8 @@ import Inventory from './views/Inventory';
 import Jobs from './views/Jobs';
 import ProfilesSearch from './views/ProfilesSearch';
 import ProfilePublic from './views/ProfilePublic';
+import ProfileEdit from './views/ProfileEdit';
+import FriendsInbox from './views/FriendsInbox';
 
 const appId = 'iron-and-oil-web';
 
@@ -261,7 +263,9 @@ export default function App() {
 
                 {view === 'jobs' && <Jobs troops={troops} inventory={inventory} user={user} appId={appId} />}
                 {view === 'profiles_search' && <ProfilesSearch user={user} appId={appId} setView={setView} setProfileUid={setProfileUid} />}
-                {view === 'profile_public' && profileUid && <ProfilePublic profileUid={profileUid} user={user} appId={appId} setView={setView} />}
+                {view === 'friends_inbox' && <FriendsInbox user={user} appId={appId} setView={setView} setProfileUid={setProfileUid} />}
+                {view === 'profile_public' && profileUid && <ProfilePublic profileUid={profileUid} user={user} appId={appId} setView={setView} setProfileUid={setProfileUid} />}
+                {view === 'profile_edit' && <ProfileEdit user={user} appId={appId} setView={setView} setProfileUid={setProfileUid} />}
             </main>
 
             <Navbar currentView={view} setView={setView} gameState={gameState} />

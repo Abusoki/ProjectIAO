@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { doc, getDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Edit } from 'lucide-react';
 
-export default function ProfilePublic({ profileUid, user, appId, setView }) {
+export default function ProfilePublic({ profileUid, user, appId, setView, setProfileUid }) {
   const [profile, setProfile] = useState(null);
   const [troops, setTroops] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,6 +35,8 @@ export default function ProfilePublic({ profileUid, user, appId, setView }) {
   if (!profileUid) return null;
   if (loading) return <div className="text-sm text-slate-400">Loading profile...</div>;
 
+  const isMe = user && user.uid === profileUid;
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -43,6 +45,11 @@ export default function ProfilePublic({ profileUid, user, appId, setView }) {
           <div className="text-xs text-slate-400">{profile.bio || ''}</div>
         </div>
         <div className="flex gap-2">
+          {isMe && (
+            <button onClick={() => { setProfileUid(profileUid); setView('profile_edit'); }} className="px-3 py-1 bg-slate-700 rounded text-xs flex items-center gap-2">
+              <Edit size={14} /> Edit
+            </button>
+          )}
           <button onClick={() => alert('Messaging is not implemented yet')} className="px-3 py-1 bg-slate-700 rounded text-xs flex items-center gap-2"><MessageSquare size={14}/>Message</button>
         </div>
       </div>
