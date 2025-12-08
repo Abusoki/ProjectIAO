@@ -25,9 +25,12 @@ export default function ProfilesSearch({ user, appId, setView, setProfileUid }) 
     if (q.length === 0) return setResults([]);
     setLoading(true);
     try {
+      // Use normalized, lowercase field for case-insensitive prefix search
+      const qLower = q.toLowerCase();
       const cg = collectionGroup(db, 'meta');
-      const qUpperBound = q + '\uf8ff';
-      const qry = query(cg, where('displayName', '>=', q), where('displayName', '<=', qUpperBound), orderBy('displayName'), limit(50));
+      const qUpperBound = qLower + '\uf8ff';
+      // Query on displayNameLower (must be written by ProfileEdit/saveName)
+      const qry = query(cg, where('displayNameLower', '>=', qLower), where('displayNameLower', '<=', qUpperBound), orderBy('displayNameLower'), limit(50));
       const snap = await getDocs(qry);
       const rows = [];
       snap.forEach(d => {
