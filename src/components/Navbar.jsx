@@ -17,8 +17,6 @@ export default function Navbar({ currentView, setView, gameState }) {
             <NavBtn view="inventory" icon={Package} label="Bag" color="text-blue-400" />
             <NavBtn view="skills" icon={GraduationCap} label="Skills" color="text-purple-500" />
             <NavBtn view="jobs" icon={ChefHat} label="Jobs" color="text-orange-500" />
-            <NavBtn view="kitchen" icon={ChefHat} label="Kitchen" color="text-amber-500" />
-            <NavBtn view="smithing" icon={Hammer} label="Smith" color="text-gray-400" />
             <NavBtn view="profiles_search" icon={Users} label="Social" color="text-green-400" />
             <button
                 onClick={() => setView(gameState === 'fighting' ? 'combat' : 'mission_select')}
