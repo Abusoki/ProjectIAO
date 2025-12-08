@@ -18,8 +18,8 @@ export default function Skills({ troops, user, appId }) {
 
     const applySkill = async (unit, skillId) => {
         if (!user) return;
-        if (!canChooseSkill(unit)) {
-            alert('Unit is not eligible for Elf skills.');
+        if (!canChooseRaceSkill(unit)) {
+            alert('Unit is not eligible for this race skill.');
             return;
         }
 
