@@ -63,7 +63,7 @@ export default function Skills({ troops, user, appId }) {
             { id: 'race_placeholder_2', name: 'Heritage Strike', desc: 'Placeholder: active node' },
             { id: 'race_placeholder_3', name: 'Sylvan Guard', desc: 'Placeholder: defensive node' },
             { id: 'race_placeholder_4', name: 'Wildstep', desc: 'Placeholder: mobility node' },
-            { id: 'race_placeholder_5', name: 'Forest's Favor', desc: 'Placeholder: utility node' }
+            { id: 'race_placeholder_5', name: "Forest's Favor", desc: 'Placeholder: utility node' }
         ];
 
         if (unit?.race === 'Elf') {
