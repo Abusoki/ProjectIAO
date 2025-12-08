@@ -1,0 +1,12 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "meta",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "displayNameLower", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
