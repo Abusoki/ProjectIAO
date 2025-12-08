@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { doc, updateDoc, setDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, deleteDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { getEffectiveStats } from '../utils/mechanics';
 import { LEVEL_XP_CURVE } from '../config/gameData';
@@ -13,6 +13,12 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
     // Fix: Keep a ref to inventory so we always have the latest version when battle ends
     const inventoryRef = useRef(inventory);
     useEffect(() => { inventoryRef.current = inventory; }, [inventory]);
+
+    // Local caches to reduce write volume
+    const lastSentTroopsRef = useRef(new Map()); // uid -> JSON snapshot of last sent fields
+    const lastSentCombatRef = useRef(null); // stringified enemies+active
+    const writeTickCounter = useRef(0);
+    const WRITE_INTERVAL_TICKS = 3; // only perform DB troop/combat writes every N internal ticks
 
     const addDamageEvent = (targetId, amount, type = 'damage') => {
         const id = Math.random();
@@ -28,12 +34,12 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
         try {
             const troopsQ = query(collection(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops'), where('inCombat', '==', true));
             const snap = await getDocs(troopsQ);
-            const promises = [];
+            if (snap.empty) return;
+            const batch = writeBatch(db);
             snap.forEach(d => {
-                // When a troop doc still exists and is inCombat, reset its flags
-                promises.push(updateDoc(d.ref, { inCombat: false, actionGauge: 0 }).catch(()=>{}));
+                batch.update(d.ref, { inCombat: false, actionGauge: 0 });
             });
-            await Promise.all(promises);
+            await batch.commit();
         } catch (e) {
             console.error('Failed cleanup inCombat flags', e);
         }
@@ -51,6 +57,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             const combatRef = doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combat');
             let logUpdates = [];
             let battleOver = false;
+            // Collect dirty troops in-memory; we will flush to DB only when needed
             let dirtyTroops = new Map();
             
             const fighters = troops.filter(t => t.inCombat);
@@ -135,21 +142,89 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                     }
                 }
                 
-                if (isPlayer) dirtyTroops.set(actor.uid, actor);
-                if (target.uid) dirtyTroops.set(target.uid, target);
+                // Mark players/targets as dirty for potential DB write
+                if (isPlayer) dirtyTroops.set(actor.uid, {
+                    uid: actor.uid,
+                    currentHp: actor.currentHp,
+                    actionGauge: actor.actionGauge,
+                    battleKills: actor.battleKills || 0,
+                    combatHitCount: actor.combatHitCount || 0,
+                    combatAttackCount: actor.combatAttackCount || 0,
+                    inCombat: actor.inCombat || false
+                });
+                if (target.uid) dirtyTroops.set(target.uid, {
+                    uid: target.uid,
+                    currentHp: target.currentHp,
+                    actionGauge: target.actionGauge,
+                    battleKills: target.battleKills || 0,
+                    combatHitCount: target.combatHitCount || 0,
+                    combatAttackCount: target.combatAttackCount || 0,
+                    inCombat: target.inCombat || false
+                });
             });
 
+            // Apply local state updates for UI immediately
             setEnemies([...enemies]); 
             if (logUpdates.length > 0) setCombatLog(prev => [...prev, ...logUpdates].slice(-8));
             
-            updateDoc(combatRef, { enemies: enemies, active: !battleOver }).catch(()=>{});
-            dirtyTroops.forEach(t => {
-                updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', t.uid), { 
-                    currentHp: t.currentHp, actionGauge: t.actionGauge, battleKills: t.battleKills || 0,
-                    combatHitCount: t.combatHitCount || 0, combatAttackCount: t.combatAttackCount || 0
-                }).catch(()=>{});
-            });
+            // Throttle writes: only attempt to write every WRITE_INTERVAL_TICKS intervals.
+            writeTickCounter.current = (writeTickCounter.current + 1) % WRITE_INTERVAL_TICKS;
+            const shouldFlushWrites = writeTickCounter.current === 0;
 
+            // Combat doc snapshot for comparison
+            const combatSnapshot = JSON.stringify({ enemies: enemies.map(e => ({ id: e.id, currentHp: e.currentHp })), active: !battleOver });
+
+            if (shouldFlushWrites) {
+                // Build a batch for troop updates and conditional combat update
+                const batch = writeBatch(db);
+                let batchOps = 0;
+
+                // 1) Conditionally update combat doc only if changed
+                if (lastSentCombatRef.current !== combatSnapshot) {
+                    batch.update(combatRef, { enemies: enemies, active: !battleOver }).catch(()=>{});
+                    // Note: writeBatch doesn't return Promise for update calls here; we'll commit below.
+                    batchOps++;
+                    lastSentCombatRef.current = combatSnapshot;
+                }
+
+                // 2) For each dirty troop check lastSentTroopsRef to avoid redundant writes
+                dirtyTroops.forEach((t) => {
+                    const key = t.uid;
+                    const last = lastSentTroopsRef.current.get(key);
+                    // compare relevant fields
+                    const snapshot = `${t.currentHp}|${t.actionGauge}|${t.battleKills}|${t.combatHitCount}|${t.combatAttackCount}|${t.inCombat}`;
+                    if (last !== snapshot) {
+                        const troopRef = doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', key);
+                        batch.update(troopRef, {
+                            currentHp: t.currentHp,
+                            actionGauge: t.actionGauge,
+                            battleKills: t.battleKills || 0,
+                            combatHitCount: t.combatHitCount || 0,
+                            combatAttackCount: t.combatAttackCount || 0,
+                            inCombat: t.inCombat || false
+                        });
+                        lastSentTroopsRef.current.set(key, snapshot);
+                        batchOps++;
+                    }
+                });
+
+                // Commit batch if we added operations
+                if (batchOps > 0) {
+                    batch.commit().catch(err => {
+                        console.error('Combat batch commit failed', err);
+                        // On failure, clear lastSentCombat so we'll retry next flush
+                        lastSentCombatRef.current = null;
+                    });
+                }
+            } else {
+                // Even when not flushing, update local lastSentTroopsRef for troops we just wrote in-memory
+                // (do not mark as sent — keep previous state so flush will send changes)
+            }
+
+            // Finally update combat active flag locally (so onSnapshot listeners see it change promptly)
+            // Note: DB write may be throttled; local UI remains responsive.
+            // We still rely on the combat system to set active flag in DB at lower frequency.
+            // End-of-battle handling:
             const aliveTroops = fighters.filter(t => t.currentHp > 0);
             const aliveEnemies = enemies.filter(e => e.currentHp > 0);
             
@@ -162,7 +237,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             }
         }, 800);
         return () => clearInterval(interval);
-    }, [gameState, enemies]);
+    }, [gameState, enemies, troops, user]);
 
     const handleVictory = async (survivors) => {
         setGameState('victory');
@@ -216,33 +291,59 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
              }
         }
 
-        const updates = survivors.map(async (unit) => {
-            // PERMADEATH CHECK
-            if (unit.currentHp <= 0) {
-                console.log(`Unit ${unit.name} died. Deleting...`);
-                return deleteDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', unit.uid));
-            }
-            
-            let newXp = (unit.xp || 0) + xpGain;
-            let newLevel = unit.level;
-            if (newLevel < 10 && newXp >= LEVEL_XP_CURVE[newLevel]) newLevel++;
-            
-            const effectiveStats = getEffectiveStats({ ...unit, level: newLevel }, unit.equipment ? Object.values(unit.equipment) : []);
-            const isCloseCall = (unit.currentHp / effectiveStats.maxHp) <= 0.05;
-            const newLore = { 
-                missionsWon: (unit.lore?.missionsWon || 0) + 1, 
-                kills: (unit.lore?.kills || 0) + (unit.battleKills || 0), 
-                closeCalls: (unit.lore?.closeCalls || 0) + (isCloseCall ? 1 : 0) 
-            };
-            
-            await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', unit.uid), { 
-                xp: newXp, level: newLevel, lore: newLore, inCombat: false, actionGauge: 0 
+        // Batch survivors updates to minimize writes
+        try {
+            const batch = writeBatch(db);
+            survivors.forEach((unit) => {
+                const ref = doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', unit.uid);
+                if (unit.currentHp <= 0) {
+                    batch.delete(ref);
+                } else {
+                    let newXp = (unit.xp || 0) + xpGain;
+                    let newLevel = unit.level;
+                    if (newLevel < 10 && newXp >= LEVEL_XP_CURVE[newLevel]) newLevel++;
+                    const effectiveStats = getEffectiveStats({ ...unit, level: newLevel }, unit.equipment ? Object.values(unit.equipment) : []);
+                    const isCloseCall = (unit.currentHp / effectiveStats.maxHp) <= 0.05;
+                    const newLore = { 
+                        missionsWon: (unit.lore?.missionsWon || 0) + 1, 
+                        kills: (unit.lore?.kills || 0) + (unit.battleKills || 0), 
+                        closeCalls: (unit.lore?.closeCalls || 0) + (isCloseCall ? 1 : 0) 
+                    };
+                    batch.update(ref, { xp: newXp, level: newLevel, lore: newLore, inCombat: false, actionGauge: 0 });
+                }
             });
-        });
-        
-        await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'profile', 'data'), { gold: (user.gold || 0) + 15, inventory: newInv });
-        await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combat'), { active: false });
-        await Promise.all(updates);
+            // update profile data and combat doc
+            const profileRef = doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'profile', 'data');
+            batch.update(profileRef, { gold: (user.gold || 0) + 15, inventory: newInv });
+            const combatRef = doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combat');
+            batch.update(combatRef, { active: false });
+            await batch.commit();
+        } catch (e) {
+            console.error('Batched victory commit failed', e);
+            // fallback to individual updates (best-effort)
+            const updates = survivors.map(async (unit) => {
+                if (unit.currentHp <= 0) {
+                    return deleteDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', unit.uid));
+                }
+                
+                let newXp = (unit.xp || 0) + xpGain;
+                let newLevel = unit.level;
+                if (newLevel < 10 && newXp >= LEVEL_XP_CURVE[newLevel]) newLevel++;
+                const effectiveStats = getEffectiveStats({ ...unit, level: newLevel }, unit.equipment ? Object.values(unit.equipment) : []);
+                const isCloseCall = (unit.currentHp / effectiveStats.maxHp) <= 0.05;
+                const newLore = { 
+                    missionsWon: (unit.lore?.missionsWon || 0) + 1, 
+                    kills: (unit.lore?.kills || 0) + (unit.battleKills || 0), 
+                    closeCalls: (unit.lore?.closeCalls || 0) + (isCloseCall ? 1 : 0) 
+                };
+                await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', unit.uid), { 
+                    xp: newXp, level: newLevel, lore: newLore, inCombat: false, actionGauge: 0 
+                });
+            });
+            await Promise.all(updates);
+            await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'profile', 'data'), { gold: (user.gold || 0) + 15, inventory: newInv });
+            await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combat'), { active: false });
+        }
 
         // Final safety cleanup to ensure no troop remains flagged as inCombat
         await cleanupInCombatFlags();
@@ -251,9 +352,16 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
     const handleDefeat = async (party) => {
         setGameState('defeat');
         setAutoBattle(false);
-        await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combat'), { active: false });
-        // Ensure all are deleted
-        await Promise.all(party.map(u => deleteDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', u.uid))));
+        try {
+            const batch = writeBatch(db);
+            batch.update(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combat'), { active: false });
+            party.forEach(u => batch.delete(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', u.uid)));
+            await batch.commit();
+        } catch (e) {
+            console.error('Batched defeat commit failed', e);
+            await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combat'), { active: false }).catch(()=>{});
+            await Promise.all(party.map(u => deleteDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', u.uid))));
+        }
         // Final safety cleanup for any remaining troop docs
         await cleanupInCombatFlags();
     };

@@ -3,12 +3,12 @@
   "WorkspaceRootPath": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\MissionSelect.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\views\\MissionSelect.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\hooks\\useCombat.js||{3B902123-F8A7-4915-9F01-361F908088D0}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\hooks\\useCombat.js||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\MissionSelect.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\views\\MissionSelect.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\App.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}",
@@ -50,7 +50,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -62,7 +62,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "MissionSelect.jsx",
               "DocumentMoniker": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\MissionSelect.jsx",
               "RelativeDocumentMoniker": "src\\views\\MissionSelect.jsx",
@@ -75,13 +75,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "useCombat.js",
               "DocumentMoniker": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\hooks\\useCombat.js",
               "RelativeDocumentMoniker": "src\\hooks\\useCombat.js",
               "ToolTip": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\hooks\\useCombat.js",
               "RelativeToolTip": "src\\hooks\\useCombat.js",
-              "ViewState": "AgIAAJYAAAAAAAAAAAAMwJ0AAAAdAAAAAAAAAA==",
+              "ViewState": "AgIAAAsAAAAAAAAAAAAowK4AAAAdAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
               "WhenOpened": "2025-12-08T03:04:59.068Z",
               "EditorCaption": ""
@@ -96,8 +96,7 @@
               "RelativeToolTip": "src\\config\\gameData.js",
               "ViewState": "AgIAAAsAAAAAAAAAAAAAwB4AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-12-08T03:04:28.153Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-08T03:04:28.153Z"
             },
             {
               "$type": "Document",
@@ -109,8 +108,7 @@
               "RelativeToolTip": "firestore.indexes.json",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-12-08T02:41:06.127Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-08T02:41:06.127Z"
             },
             {
               "$type": "Document",
@@ -122,8 +120,7 @@
               "RelativeToolTip": "src\\components\\Navbar.jsx",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAABWAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2025-12-08T02:38:00.543Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-08T02:38:00.543Z"
             },
             {
               "$type": "Document",
@@ -135,8 +132,7 @@
               "RelativeToolTip": "src\\views\\FriendsInbox.jsx",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAGoAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2025-12-08T02:34:12.83Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-08T02:34:12.83Z"
             },
             {
               "$type": "Document",
@@ -148,8 +144,7 @@
               "RelativeToolTip": "src\\App.jsx",
               "ViewState": "AgIAAHQAAAAAAAAAAAAowFUAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2025-12-08T02:32:32.818Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-08T02:32:32.818Z"
             },
             {
               "$type": "Document",
@@ -161,8 +156,7 @@
               "RelativeToolTip": "src\\views\\ProfileEdit.jsx",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAGIAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2025-12-08T02:32:18.996Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-08T02:32:18.996Z"
             },
             {
               "$type": "Document",
@@ -174,8 +168,7 @@
               "RelativeToolTip": "src\\views\\ProfilePublic.jsx",
               "ViewState": "AgIAAB0AAAAAAAAAAAAuwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2025-12-08T02:30:00.219Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-08T02:30:00.219Z"
             },
             {
               "$type": "Document",
@@ -187,8 +180,7 @@
               "RelativeToolTip": "src\\views\\ProfilesSearch.jsx",
               "ViewState": "AgIAAHUAAAAAAAAAAAAawAkAAAAKAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2025-12-08T02:29:45.971Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-08T02:29:45.971Z"
             }
           ]
         }
