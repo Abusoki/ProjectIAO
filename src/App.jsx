@@ -21,6 +21,8 @@ import MissionSelect from './views/MissionSelect';
 import Combat from './views/Combat';
 import Inventory from './views/Inventory';
 import Jobs from './views/Jobs';
+import ProfilesSearch from './views/ProfilesSearch';
+import ProfilePublic from './views/ProfilePublic';
 
 const appId = 'iron-and-oil-web';
 
@@ -33,6 +35,7 @@ export default function App() {
     const [gold, setGold] = useState(0);
     const [tavernState, setTavernState] = useState({ recruits: [], nextRefresh: 0 });
     const [selectedUnitId, setSelectedUnitId] = useState(null);
+    const [profileUid, setProfileUid] = useState(null);
     
     // Combat State
     const [gameState, setGameState] = useState('idle');
@@ -257,6 +260,8 @@ export default function App() {
                 />}
 
                 {view === 'jobs' && <Jobs troops={troops} inventory={inventory} user={user} appId={appId} />}
+                {view === 'profiles_search' && <ProfilesSearch user={user} appId={appId} setView={setView} setProfileUid={setProfileUid} />}
+                {view === 'profile_public' && profileUid && <ProfilePublic profileUid={profileUid} user={user} appId={appId} setView={setView} />}
             </main>
 
             <Navbar currentView={view} setView={setView} gameState={gameState} />

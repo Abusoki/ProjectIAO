@@ -1,5 +1,5 @@
-        import React from 'react';
-import { User, GraduationCap, ChefHat, Sword, Hammer, Package } from 'lucide-react';
+import React from 'react';
+import { User, GraduationCap, ChefHat, Sword, Hammer, Package, Users } from 'lucide-react';
 
 export default function Navbar({ currentView, setView, gameState }) {
     const NavBtn = ({ view, icon: Icon, label, color }) => (
@@ -17,6 +17,9 @@ export default function Navbar({ currentView, setView, gameState }) {
             <NavBtn view="inventory" icon={Package} label="Bag" color="text-blue-400" />
             <NavBtn view="skills" icon={GraduationCap} label="Skills" color="text-purple-500" />
             <NavBtn view="jobs" icon={ChefHat} label="Jobs" color="text-orange-500" />
+            <NavBtn view="kitchen" icon={ChefHat} label="Kitchen" color="text-amber-500" />
+            <NavBtn view="smithing" icon={Hammer} label="Smith" color="text-gray-400" />
+            <NavBtn view="profiles_search" icon={Users} label="Social" color="text-green-400" />
             <button
                 onClick={() => setView(gameState === 'fighting' ? 'combat' : 'mission_select')}
                 className={`p-2 rounded flex flex-col items-center gap-1 text-xs ${['mission_select', 'combat'].includes(currentView) ? 'text-red-500' : 'text-slate-500'}`}
