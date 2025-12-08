@@ -160,12 +160,12 @@ export default function CharacterSheet({ user, unit, inventory, setView, appId }
             <div className="bg-slate-800 rounded-lg border border-slate-700 p-4">
                 <h3 className="font-bold text-slate-300 mb-4 flex items-center gap-2"><Shirt size={16}/> Equipment</h3>
                 <div className="grid grid-cols-4 gap-2">
-                    {{
+                    {[
                         { slot: 'mainHand', icon: <Sword size={16}/> },
                         { slot: 'gloves', icon: <Hand size={16}/> },
                         { slot: 'cape', icon: <Shirt size={16}/> },
                         { slot: 'boots', icon: <Footprints size={16}/> }
-                    }.map(({slot, icon}) => {
+                    ].map(({slot, icon}) => {
                         const item = unit.equipment?.[slot];
                         return (
                             <div key={slot} className="aspect-square bg-slate-900 border border-slate-600 rounded flex flex-col items-center justify-center relative group">
