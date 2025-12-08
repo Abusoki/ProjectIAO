@@ -16,6 +16,7 @@ export default function Navbar({ currentView, setView, gameState }) {
             <NavBtn view="barracks" icon={User} label="Base" color="text-amber-500" />
             <NavBtn view="inventory" icon={Package} label="Bag" color="text-blue-400" />
             <NavBtn view="skills" icon={GraduationCap} label="Skills" color="text-purple-500" />
+            <NavBtn view="jobs" icon={ChefHat} label="Cook" color="text-orange-500" />
             <NavBtn view="kitchen" icon={ChefHat} label="Cook" color="text-orange-500" />
             <NavBtn view="smithing" icon={Hammer} label="Smith" color="text-gray-400" />
             <button 
