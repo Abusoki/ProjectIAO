@@ -11,9 +11,21 @@ export default function CharacterSheet({ user, unit, inventory, setView, appId }
     const [nameInput, setNameInput] = useState('');
     const [savingName, setSavingName] = useState(false);
 
+    // Local optimistic override to avoid flashing back to server name while waiting for snapshot
+    const [nameOverride, setNameOverride] = useState(null);
+    const [nameOverrideUid, setNameOverrideUid] = useState(null);
+
     useEffect(() => {
-        if (unit) setNameInput(unit.name || '');
-    }, [unit]);
+        // Only sync incoming unit name into the input when not actively editing.
+        if (!editingName && unit) {
+            setNameInput(unit.name || '');
+            // If server snapshot matches our optimistic override, clear it.
+            if (nameOverrideUid === unit.uid && nameOverride === unit.name) {
+                setNameOverride(null);
+                setNameOverrideUid(null);
+            }
+        }
+    }, [unit, editingName, nameOverride, nameOverrideUid]);
 
     if (!unit) return null;
 
@@ -69,11 +81,17 @@ export default function CharacterSheet({ user, unit, inventory, setView, appId }
         if (!user) return;
         try {
             setSavingName(true);
+            // Optimistically keep the new name visible until the DB snapshot arrives
+            setNameOverride(trimmed);
+            setNameOverrideUid(unit.uid);
             await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', unit.uid), { name: trimmed });
             setEditingName(false);
         } catch (e) {
             console.error('Failed to save name', e);
             alert('Failed to save name. See console for details.');
+            // revert optimistic override on failure
+            setNameOverride(null);
+            setNameOverrideUid(null);
         } finally {
             setSavingName(false);
         }
@@ -104,7 +122,12 @@ export default function CharacterSheet({ user, unit, inventory, setView, appId }
                                 Save
                             </button>
                             <button
-                                onClick={() => { setEditingName(false); setNameInput(unit.name || ''); }}
+                                onClick={() => {
+                                    setEditingName(false);
+                                    // restore input to server name or optimistic override if present for this unit
+                                    const restored = (nameOverrideUid === unit.uid && nameOverride) ? nameOverride : (unit.name || '');
+                                    setNameInput(restored);
+                                }}
                                 className="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-sm"
                             >
                                 Cancel
@@ -126,7 +149,7 @@ export default function CharacterSheet({ user, unit, inventory, setView, appId }
             {/* Main Stats Card */}
             <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
                 <div className="p-4 bg-slate-900/50 border-b border-slate-700">
-                    <h2 className="text-2xl font-bold text-white">{unit.name}</h2>
+                    <h2 className="text-2xl font-bold text-white">{nameOverrideUid === unit.uid && nameOverride ? nameOverride : unit.name}</h2>
                     <p className="text-slate-400 text-sm">{unit.race} {unit.class}</p>
                     
                     {/* XP Bars */}

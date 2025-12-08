@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\CharacterSheet.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\views\\CharacterSheet.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\Skills.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\views\\Skills.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}"
     }
@@ -27,12 +31,25 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "CharacterSheet.jsx",
+              "DocumentMoniker": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\CharacterSheet.jsx",
+              "RelativeDocumentMoniker": "src\\views\\CharacterSheet.jsx",
+              "ToolTip": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\CharacterSheet.jsx",
+              "RelativeToolTip": "src\\views\\CharacterSheet.jsx",
+              "ViewState": "AgIAAJMAAAAAAAAAAAAuwK8AAAAWAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2025-12-08T02:09:35.52Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
               "Title": "Skills.jsx",
               "DocumentMoniker": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\Skills.jsx",
               "RelativeDocumentMoniker": "src\\views\\Skills.jsx",
               "ToolTip": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\Skills.jsx",
               "RelativeToolTip": "src\\views\\Skills.jsx",
-              "ViewState": "AgIAAC0AAAAAAAAAAAAUwBMAAAAGAAAAAAAAAA==",
+              "ViewState": "AgIAAHwAAAAAAAAAAAAuwBIAAAAGAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
               "WhenOpened": "2025-12-08T01:47:55.125Z",
               "EditorCaption": ""
