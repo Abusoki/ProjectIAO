@@ -8,20 +8,19 @@ export default function Skills({ troops, user, appId }) {
     const [savingFor, setSavingFor] = useState(null);
     const [selectedUnitId, setSelectedUnitId] = useState(null);
 
-    const elfSkills = SKILLS?.Elf?.row1 || [];
-
     const selectedUnit = troops.find(t => t.uid === selectedUnitId) || null;
 
-    const canChooseSkill = (unit) => {
+    const canChooseRaceSkill = (unit) => {
         if (!unit) return false;
-        if (unit.race !== 'Elf') return false;
+        const raceOptions = SKILLS?.[unit.race]?.row1;
+        if (!raceOptions || raceOptions.length === 0) return false;
         if ((unit.level || 0) < 3) return false;
         return true;
     };
 
     const applySkill = async (unit, skillId) => {
         if (!user) return;
-        if (!canChooseSkill(unit)) {
+        if (!canChooseRaceSkill(unit)) {
             alert('Unit is not eligible for this race skill.');
             return;
         }
@@ -57,28 +56,13 @@ export default function Skills({ troops, user, appId }) {
         }
     };
 
-    const buildRaceTree = (unit) => {
-        const placeholders = [
+    const buildRacePlaceholders = (unit) => {
+        return [
             { id: 'race_placeholder_1', name: 'Ancestral Echo', desc: 'Placeholder: passive node' },
             { id: 'race_placeholder_2', name: 'Heritage Strike', desc: 'Placeholder: active node' },
             { id: 'race_placeholder_3', name: 'Sylvan Guard', desc: 'Placeholder: defensive node' },
             { id: 'race_placeholder_4', name: 'Wildstep', desc: 'Placeholder: mobility node' },
             { id: 'race_placeholder_5', name: "Forest's Favor", desc: 'Placeholder: utility node' }
-        ];
-
-        if (unit?.race === 'Elf') {
-            // put real elf choices first, then placeholders
-            return [
-                ...elfSkills,
-                ...placeholders
-            ];
-        }
-
-        // non-elf: show generic placeholders
-        return [
-            { id: `${unit?.race || 'Race'}_trait_a`, name: `${unit?.race || 'Race'} Trait A`, desc: 'Placeholder' },
-            { id: `${unit?.race || 'Race'}_trait_b`, name: `${unit?.race || 'Race'} Trait B`, desc: 'Placeholder' },
-            ...placeholders
         ];
     };
 
@@ -143,46 +127,81 @@ export default function Skills({ troops, user, appId }) {
                                 <div className="text-xs text-slate-400">{selectedUnit.race}</div>
                             </div>
 
-                            <div className="grid gap-2">
-                                {buildRaceTree(selectedUnit).map(node => {
-                                    const isElfSkill = elfSkills.some(s => s.id === node.id);
-                                    const eligible = isElfSkill ? canChooseSkill(selectedUnit) : false;
-                                    const current = selectedUnit.skills?.row1 || null;
-                                    const isActive = current === node.id;
-
-                                    return (
-                                        <div key={node.id} className="flex items-center justify-between bg-slate-900 p-2 rounded border border-slate-700">
-                                            <div>
-                                                <div className="font-semibold text-sm">{node.name}</div>
-                                                <div className="text-[11px] text-slate-400">{node.desc}</div>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                {isElfSkill ? (
-                                                    <>
+                            <div className="mb-3">
+                                {/* First row: the two mutually-exclusive choices (if present) */}
+                                <div className="flex gap-2">
+                                    {(SKILLS?.[selectedUnit.race]?.row1 || []).slice(0, 2).map(option => {
+                                        const current = selectedUnit.skills?.row1 || null;
+                                        const eligible = canChooseRaceSkill(selectedUnit);
+                                        const isActive = current === option.id;
+                                        const disabledOtherSelected = current && current !== option.id;
+                                        return (
+                                            <div key={option.id} className="flex-1 bg-slate-900 p-3 rounded border border-slate-700 flex flex-col justify-between">
+                                                <div>
+                                                    <div className="font-semibold">{option.name}</div>
+                                                    <div className="text-[11px] text-slate-400 mt-1">{option.desc}</div>
+                                                </div>
+                                                <div className="mt-3 flex gap-2">
+                                                    <button
+                                                        onClick={() => applySkill(selectedUnit, option.id)}
+                                                        disabled={savingFor === selectedUnit.uid || !eligible || isActive || disabledOtherSelected}
+                                                        className={`flex-1 px-2 py-1 rounded text-xs font-bold transition-colors ${isActive ? 'bg-amber-600 text-white' : 'bg-slate-700 hover:bg-slate-600 text-slate-200'}`}
+                                                    >
+                                                        {isActive ? 'Selected' : disabledOtherSelected ? 'Locked' : 'Teach'}
+                                                    </button>
+                                                    {isActive && (
                                                         <button
-                                                            onClick={() => applySkill(selectedUnit, node.id)}
-                                                            disabled={savingFor === selectedUnit.uid || !eligible || isActive}
-                                                            className={`px-2 py-1 rounded text-xs font-bold transition-colors ${isActive ? 'bg-amber-600 text-white' : 'bg-slate-700 hover:bg-slate-600 text-slate-200'}`}
+                                                            onClick={() => clearSkill(selectedUnit)}
+                                                            disabled={savingFor === selectedUnit.uid}
+                                                            className="px-2 py-1 rounded text-xs bg-red-700 hover:bg-red-600 text-white"
                                                         >
-                                                            {isActive ? 'Selected' : 'Teach'}
+                                                            Remove
                                                         </button>
-                                                        {isActive && (
-                                                            <button
-                                                                onClick={() => clearSkill(selectedUnit)}
-                                                                disabled={savingFor === selectedUnit.uid}
-                                                                className="px-2 py-1 rounded text-xs bg-red-700 hover:bg-red-600 text-white"
-                                                            >
-                                                                Remove
-                                                            </button>
-                                                        )}
-                                                    </>
-                                                ) : (
-                                                    <button className="px-2 py-1 rounded text-xs bg-slate-700 text-slate-400 cursor-not-allowed" title="Placeholder">Locked</button>
-                                                )}
+                                                    )}
+                                                </div>
                                             </div>
+                                        );
+                                    })}
+
+                                    {/* If no options present, show two generic locked placeholders */}
+                                    {(!SKILLS?.[selectedUnit.race]?.row1 || SKILLS[selectedUnit.race].row1.length === 0) && (
+                                        <>
+                                            <div className="flex-1 bg-slate-900 p-3 rounded border border-slate-700 flex flex-col justify-between">
+                                                <div>
+                                                    <div className="font-semibold">Trait A</div>
+                                                    <div className="text-[11px] text-slate-400 mt-1">Placeholder</div>
+                                                </div>
+                                                <div className="mt-3">
+                                                    <button className="w-full px-2 py-1 rounded text-xs bg-slate-700 text-slate-400 cursor-not-allowed">Locked</button>
+                                                </div>
+                                            </div>
+                                            <div className="flex-1 bg-slate-900 p-3 rounded border border-slate-700 flex flex-col justify-between">
+                                                <div>
+                                                    <div className="font-semibold">Trait B</div>
+                                                    <div className="text-[11px] text-slate-400 mt-1">Placeholder</div>
+                                                </div>
+                                                <div className="mt-3">
+                                                    <button className="w-full px-2 py-1 rounded text-xs bg-slate-700 text-slate-400 cursor-not-allowed">Locked</button>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Remaining placeholder nodes */}
+                            <div className="grid gap-2">
+                                {buildRacePlaceholders(selectedUnit).map(node => (
+                                    <div key={node.id} className="flex items-center justify-between bg-slate-900 p-2 rounded border border-slate-700">
+                                        <div>
+                                            <div className="font-semibold text-sm">{node.name}</div>
+                                            <div className="text-[11px] text-slate-400">{node.desc}</div>
                                         </div>
-                                    );
-                                })}
+                                        <div>
+                                            <button className="px-2 py-1 rounded text-xs bg-slate-700 text-slate-400 cursor-not-allowed" title="Placeholder">Locked</button>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
