@@ -20,6 +20,12 @@ export const SKILLS = {
             { id: 'oil_refined', name: 'Oil Refined', desc: 'Passive: Heal 5 HP every 5th hit dealt.' },
             { id: 'oil_concentrated', name: 'Oil Concentrated', desc: 'Passive: +10% DMG on every 3rd hit.' }
         ]
+    },
+    Elf: {
+        row1: [
+            { id: 'elvish_flicker', name: 'Elvish Flicker', desc: 'Start of combat: Speed doubled for first 3 attacks.' },
+            { id: 'elvish_mindset', name: 'Elvish Mindset', desc: 'First 3 incoming damage hits are prevented.' }
+        ]
     }
 };
 

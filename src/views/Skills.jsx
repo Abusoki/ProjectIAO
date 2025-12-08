@@ -1,51 +1,130 @@
-import React from 'react';
-import { Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { Doc } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { SKILLS } from '../config/gameData';
 
 export default function Skills({ troops, user, appId }) {
-    const learnSkill = async (unit, skillId) => {
-        await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', unit.uid), { "skills.row1": skillId });
+    const [savingFor, setSavingFor] = useState(null);
+
+    const elfSkills = SKILLS?.Elf?.row1 || [];
+
+    const canChooseSkill = (unit) => {
+        if (!unit) return false;
+        if (unit.race !== 'Elf') return false;
+        if ((unit.level || 0) < 3) return false;
+        return true;
+    };
+
+    const applySkill = async (unit, skillId) => {
+        if (!user) return;
+        if (!canChooseSkill(unit)) {
+            alert('Unit is not eligible for Elf skills.');
+            return;
+        }
+
+        if (!window.confirm(`Teach ${unit.name} "${skillId}"?`)) return;
+
+        try {
+            setSavingFor(unit.uid);
+            await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', unit.uid), {
+                'skills.row1': skillId
+            });
+        } catch (e) {
+            console.error('Skill assign error', e);
+            alert('Failed to assign skill. Check console for details.');
+        } finally {
+            setSavingFor(null);
+        }
+    };
+
+    const clearSkill = async (unit) => {
+        if (!user) return;
+        if (!window.confirm(`Remove skill from ${unit.name}?`)) return;
+        try {
+            setSavingFor(unit.uid);
+            await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', unit.uid), {
+                'skills.row1': null
+            });
+        } catch (e) {
+            console.error('Skill clear error', e);
+            alert('Failed to remove skill. Check console for details.');
+        } finally {
+            setSavingFor(null);
+        }
     };
 
     return (
-        <div className="space-y-4">
-            <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-amber-500 flex items-center gap-2"><Sparkles size={20}/> Academy</h2>
+        <div className="space-y-4 animate-fade-in">
+            <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-slate-200">Skills</h2>
+                <div className="text-xs text-slate-400">Elves unlock row1 at Level 3</div>
             </div>
+
             <div className="grid gap-3">
-                {troops.map(t => (
-                    <div key={t.uid} className="bg-slate-800 p-4 rounded-lg border border-slate-700">
-                        <div className="flex justify-between items-start mb-3">
-                            <div>
-                                <h3 className="font-bold">{t.name}</h3>
-                                <div className="text-xs text-slate-400">{t.race} Lvl {t.level}</div>
-                            </div>
-                            {t.level < 3 && <span className="text-xs text-red-400 bg-red-900/20 px-2 py-1 rounded">Lvl 3 Required</span>}
-                        </div>
-                        
-                        {t.race === 'Urblosh' ? (
-                            t.level >= 3 ? (
-                                t.skills?.row1 ? (
-                                    <div className="bg-amber-900/20 border border-amber-600/50 p-2 rounded text-sm text-amber-200">
-                                        <div className="font-bold">{SKILLS.Urblosh.row1.find(s => s.id === t.skills.row1)?.name}</div>
-                                        <div className="text-xs opacity-75">{SKILLS.Urblosh.row1.find(s => s.id === t.skills.row1)?.desc}</div>
+                {troops.map(unit => {
+                    const eligible = canChooseSkill(unit);
+                    const current = unit.skills?.row1 || null;
+
+                    return (
+                        <div key={unit.uid} className="bg-slate-800 p-3 rounded border border-slate-700">
+                            <div className="flex justify-between items-start gap-4">
+                                <div>
+                                    <div className="font-bold">{unit.name} <span className="text-xs text-slate-500">Lvl {unit.level}</span></div>
+                                    <div className="text-xs text-slate-400">{unit.race} {unit.class}</div>
+                                    <div className="text-xs text-slate-500 mt-2">
+                                        {eligible ? 'Eligible for Elf row1 skills' : (unit.race !== 'Elf' ? 'Not an Elf' : 'Requires level 3')}
                                     </div>
-                                ) : (
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {SKILLS.Urblosh.row1.map(skill => (
-                                            <button key={skill.id} onClick={() => learnSkill(t, skill.id)} className="bg-slate-700 hover:bg-slate-600 p-2 rounded border border-slate-600 text-left hover:border-amber-500 transition-colors">
-                                                <div className="font-bold text-xs text-amber-400 mb-1">{skill.name}</div>
-                                                <div className="text-[10px] text-slate-400 leading-tight">{skill.desc}</div>
+                                </div>
+
+                                <div className="flex flex-col items-end gap-2">
+                                    {current ? (
+                                        <div className="text-xs text-amber-400">Current: {current}</div>
+                                    ) : (
+                                        <div className="text-xs text-slate-400">No selection</div>
+                                    )}
+                                    <div className="flex gap-2">
+                                        {eligible && elfSkills.map(s => (
+                                            <button
+                                                key={s.id}
+                                                onClick={() => applySkill(unit, s.id)}
+                                                disabled={savingFor === unit.uid || current === s.id}
+                                                className={`px-2 py-1 rounded text-xs font-bold transition-colors ${current === s.id ? 'bg-amber-600 text-white' : 'bg-slate-700 hover:bg-slate-600 text-slate-200'}`}
+                                                title={s.desc}
+                                            >
+                                                {s.name}
                                             </button>
                                         ))}
+                                        {current && (
+                                            <button
+                                                onClick={() => clearSkill(unit)}
+                                                disabled={savingFor === unit.uid}
+                                                className="px-2 py-1 rounded text-xs bg-red-700 hover:bg-red-600 text-white"
+                                            >
+                                                Remove
+                                            </button>
+                                        )}
                                     </div>
-                                )
-                            ) : <div className="text-xs text-slate-500 italic">Train this unit to unlock their potential.</div>
-                        ) : <div className="text-xs text-slate-500 italic">No advanced techniques available for {t.race}s yet.</div>}
-                    </div>
-                ))}
+                                </div>
+                            </div>
+
+                            {/* Skill descriptions */}
+                            <div className="mt-3 text-xs text-slate-400">
+                                {current ? (
+                                    <div className="italic">Selected: {elfSkills.find(s => s.id === current)?.desc || current}</div>
+                                ) : (
+                                    <div className="grid gap-1">
+                                        {elfSkills.map(s => (
+                                            <div key={`desc-${s.id}`} className="text-[12px]">
+                                                <span className="font-semibold">{s.name}:</span> <span className="text-slate-400">{s.desc}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );

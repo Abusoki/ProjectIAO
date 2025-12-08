@@ -39,8 +39,23 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             const fighters = troops.filter(t => t.inCombat);
             if (fighters.length === 0 && enemies.length > 0) return;
 
+            // Increment action gauges — apply Elvish Flicker double speed while remaining
             [...fighters, ...enemies].forEach(u => {
-                if (u.currentHp > 0) u.actionGauge = (u.actionGauge || 0) + (u.baseStats?.spd || u.spd || 8);
+                if (u.currentHp > 0) {
+                    let baseSpd = (u.baseStats?.spd || u.spd || 8);
+
+                    // Initialize flicker counter when combat begins (runtime-only)
+                    if (u.skills?.row1 === 'elvish_flicker' && u._elvishFlickerRemaining === undefined) {
+                        u._elvishFlickerRemaining = 3;
+                    }
+
+                    // If flicker active, double the speed contribution
+                    if (u.skills?.row1 === 'elvish_flicker' && u._elvishFlickerRemaining > 0) {
+                        baseSpd *= 2;
+                    }
+
+                    u.actionGauge = (u.actionGauge || 0) + baseSpd;
+                }
             });
 
             const actors = [...fighters, ...enemies].filter(u => u.currentHp > 0 && u.actionGauge >= 100).sort((a, b) => b.actionGauge - a.actionGauge);
@@ -50,6 +65,11 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                 actor.actionGauge -= 100;
                 const isPlayer = !!actor.uid;
                 
+                // When a flicker actor acts, consume one flicker charge
+                if (actor.skills?.row1 === 'elvish_flicker' && actor._elvishFlickerRemaining > 0) {
+                    actor._elvishFlickerRemaining = Math.max(0, (actor._elvishFlickerRemaining || 0) - 1);
+                }
+
                 const targets = isPlayer ? enemies.filter(e => e.currentHp > 0) : fighters.filter(t => t.currentHp > 0);
                 if (targets.length === 0) { battleOver = true; return; }
                 const target = targets[Math.floor(Math.random() * targets.length)];
@@ -65,24 +85,37 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                 
                 let rawDmg = (stats.ap * dmgMod * (0.8 + Math.random() * 0.4)) - (targetStats.def || 0);
                 let finalDmg = Math.max(1, Math.floor(rawDmg));
-                
-                target.currentHp -= finalDmg;
-                logUpdates.push(`${actor.name} hits ${target.name} for ${finalDmg}`);
-                addDamageEvent(target.id || target.uid, finalDmg, 'damage');
 
-                if (isPlayer && actor.skills?.row1 === 'oil_refined') {
-                    actor.combatHitCount = (actor.combatHitCount || 0) + 1;
-                    if (actor.combatHitCount % 5 === 0) {
-                        const heal = 5;
-                        actor.currentHp = Math.min(stats.maxHp, actor.currentHp + heal);
-                        addDamageEvent(actor.uid, heal, 'heal');
-                        logUpdates.push(`${actor.name} heals ${heal} HP`);
-                    }
+                // Initialize mindset counter for targets that have it (runtime-only)
+                if (target.skills?.row1 === 'elvish_mindset' && target._elvishMindsetRemaining === undefined) {
+                    target._elvishMindsetRemaining = 3;
                 }
 
-                if (target.currentHp <= 0) {
-                    logUpdates.push(`☠️ ${target.name} died!`);
-                    if (isPlayer) actor.battleKills = (actor.battleKills || 0) + 1;
+                // Elvish Mindset: prevent first N incoming hits
+                if (target.skills?.row1 === 'elvish_mindset' && target._elvishMindsetRemaining > 0) {
+                    target._elvishMindsetRemaining = Math.max(0, target._elvishMindsetRemaining - 1);
+                    logUpdates.push(`${target.name} shrugs off the hit!`);
+                    addDamageEvent(target.id || target.uid, 0, 'block');
+                    // Do not apply damage or death logic for this hit
+                } else {
+                    target.currentHp -= finalDmg;
+                    logUpdates.push(`${actor.name} hits ${target.name} for ${finalDmg}`);
+                    addDamageEvent(target.id || target.uid, finalDmg, 'damage');
+
+                    if (isPlayer && actor.skills?.row1 === 'oil_refined') {
+                        actor.combatHitCount = (actor.combatHitCount || 0) + 1;
+                        if (actor.combatHitCount % 5 === 0) {
+                            const heal = 5;
+                            actor.currentHp = Math.min(stats.maxHp, actor.currentHp + heal);
+                            addDamageEvent(actor.uid, heal, 'heal');
+                            logUpdates.push(`${actor.name} heals ${heal} HP`);
+                        }
+                    }
+
+                    if (target.currentHp <= 0) {
+                        logUpdates.push(`☠️ ${target.name} died!`);
+                        if (isPlayer) actor.battleKills = (actor.battleKills || 0) + 1;
+                    }
                 }
                 
                 if (isPlayer) dirtyTroops.set(actor.uid, actor);
