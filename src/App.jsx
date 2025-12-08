@@ -17,8 +17,6 @@ import Barracks from './views/Barracks';
 import CharacterSheet from './views/CharacterSheet';
 import Tavern from './views/Tavern';
 import Skills from './views/Skills';
-import Kitchen from './views/Kitchen';
-import Smithing from './views/Smithing';
 import MissionSelect from './views/MissionSelect';
 import Combat from './views/Combat';
 import Inventory from './views/Inventory';
