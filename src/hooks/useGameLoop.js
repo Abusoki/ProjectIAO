@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { getEffectiveStats } from '../utils/mechanics';
@@ -6,6 +6,12 @@ import { SKILL_XP_CURVE, MAX_COOKING_LEVEL, SMITHING_RECIPES, ACHIEVEMENTS } fro
 import { generateId } from '../utils/helpers';
 
 export function useGameLoop(user, troops, inventory, gameState, profile, setTroops) {
+    const troopsRef = useRef(troops);
+    const inventoryRef = useRef(inventory);
+
+    useEffect(() => { troopsRef.current = troops; }, [troops]);
+    useEffect(() => { inventoryRef.current = inventory; }, [inventory]);
+
     // 3. ACHIEVEMENT CHECK LOOPS
     useEffect(() => {
         if (!user || !profile) return;
@@ -52,8 +58,10 @@ export function useGameLoop(user, troops, inventory, gameState, profile, setTroo
         const interval = setInterval(async () => {
             if (gameState === 'fighting') return;
 
+            const currentTroops = troopsRef.current;
+
             // Check current troops
-            const needsHealing = troops.filter(t =>
+            const needsHealing = currentTroops.filter(t =>
                 t.currentHp > 0 &&
                 t.activity === 'idle' &&
                 !t.inCombat &&
@@ -67,7 +75,7 @@ export function useGameLoop(user, troops, inventory, gameState, profile, setTroo
             let ops = 0;
 
             // Local Optimistic Update
-            let updatedTroops = [...troops];
+            let updatedTroops = [...currentTroops];
             let hasLocalChanges = false;
 
             needsHealing.forEach(t => {
@@ -88,30 +96,27 @@ export function useGameLoop(user, troops, inventory, gameState, profile, setTroo
             });
 
             if (ops > 0) {
-                // Optimistically update UI first (optional, but good for responsiveness)
-                // Note: Firestore listener will eventually overwrite this, but it bridges the gap
                 if (hasLocalChanges && setTroops) setTroops(updatedTroops);
-
                 await batch.commit().catch(console.error);
             }
         }, 5000);
         return () => clearInterval(interval);
-    }, [user, troops, gameState, setTroops]);
+    }, [user, gameState, setTroops]);
 
     // 2. CRAFTING LOOP (Cooking & Smithing) - Optimistic Local Updates
     useEffect(() => {
         if (!user) return;
         const interval = setInterval(async () => {
-            const crafters = troops.filter(t => t.activity === 'cooking' || t.activity === 'smithing');
+            const currentTroops = troopsRef.current;
+            const currentInventory = inventoryRef.current;
+
+            const crafters = currentTroops.filter(t => t.activity === 'cooking' || t.activity === 'smithing');
             if (crafters.length === 0) return;
 
-            let localTroops = [...troops];
+            let localTroops = [...currentTroops];
             let shouldUpdateLocal = false;
             let batch = writeBatch(db);
             let writes = 0;
-
-            // We need a fresh copy of inventory for logic, but can't mutate it directly for the batch
-            // We'll trust the prop 'inventory' is fresh enough (it updates on doc changes)
 
             for (const crafter of crafters) {
                 const idx = localTroops.findIndex(t => t.uid === crafter.uid);
@@ -119,7 +124,7 @@ export function useGameLoop(user, troops, inventory, gameState, profile, setTroo
 
                 // --- COOKING LOGIC ---
                 if (crafter.activity === 'cooking') {
-                    const slimePaste = inventory.find(i => i.name === 'Slime Paste');
+                    const slimePaste = currentInventory.find(i => i.name === 'Slime Paste');
                     if (!slimePaste) {
                         batch.update(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', crafter.uid), { activity: 'idle', cookingProgress: 0 });
                         writes++;
@@ -136,7 +141,7 @@ export function useGameLoop(user, troops, inventory, gameState, profile, setTroo
                         let failChance = Math.max(0, 50 - ((lvl - 1) * 5) - (hasGloves ? 2 : 0));
                         const isSuccess = Math.random() * 100 > failChance;
 
-                        let newInv = inventory.filter(i => i.id !== slimePaste.id);
+                        let newInv = currentInventory.filter(i => i.id !== slimePaste.id);
                         if (isSuccess) newInv.push({ id: generateId(), name: "Slime Bread", type: "food", desc: "Restores 10 HP", value: 10 });
 
                         // Inventory Update
@@ -168,7 +173,7 @@ export function useGameLoop(user, troops, inventory, gameState, profile, setTroo
                     const recipeId = crafter.smithingTarget;
                     const recipe = SMITHING_RECIPES.find(r => r.id === recipeId);
 
-                    const ingredients = inventory.filter(i => i.name === recipe.input);
+                    const ingredients = currentInventory.filter(i => i.name === recipe.input);
                     if (ingredients.length < recipe.count) {
                         batch.update(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', crafter.uid), { activity: 'idle', smithingProgress: 0 });
                         writes++;
@@ -180,7 +185,7 @@ export function useGameLoop(user, troops, inventory, gameState, profile, setTroo
 
                     if (newProgress >= 100) {
                         // COMPLETION
-                        let newInv = [...inventory];
+                        let newInv = [...currentInventory];
                         for (let k = 0; k < recipe.count; k++) {
                             // Naive remove first found instance
                             const iIdx = newInv.findIndex(i => i.name === recipe.input);
@@ -224,5 +229,5 @@ export function useGameLoop(user, troops, inventory, gameState, profile, setTroo
 
         }, 1000);
         return () => clearInterval(interval);
-    }, [user, troops, inventory, setTroops]);
+    }, [user, setTroops]);
 }

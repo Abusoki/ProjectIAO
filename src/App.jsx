@@ -99,88 +99,94 @@ export default function App() {
 
     // --- MAIN COMBAT START FUNCTION ---
     const startCombat = async (missionKey) => {
-        const currentTroops = troopsRef.current;
-        let validSelectedIds = selectedTroops.filter(id => currentTroops.find(t => t.uid === id));
+        try {
+            const currentTroops = troopsRef.current;
+            let validSelectedIds = selectedTroops.filter(id => currentTroops.find(t => t.uid === id));
 
-        const mission = MISSIONS[missionKey];
-        if (!mission) {
-            console.error("Unknown mission key:", missionKey);
-            return;
+            const mission = MISSIONS[missionKey];
+            if (!mission) {
+                console.error("Unknown mission key:", missionKey);
+                return;
+            }
+
+            // Party size checks
+            if (validSelectedIds.length < (mission.minParty || 1)) {
+                alert(`This mission requires at least ${mission.minParty} character(s).`);
+                setAutoBattle(false);
+                return;
+            }
+            if (validSelectedIds.length > (mission.maxParty || 4)) {
+                // Trim to allowed party size
+                validSelectedIds = validSelectedIds.slice(0, mission.maxParty);
+            }
+
+            if (validSelectedIds.length === 0) {
+                setAutoBattle(false);
+                return;
+            }
+
+            setLastMissionKey(missionKey);
+
+            // Determine enemy count from mission if provided
+            const minSpawn = mission.spawnMin || 1;
+            const maxSpawn = mission.spawnMax || Math.max(1, Math.floor(Math.random() * 4) + 1);
+            const enemyCount = Math.floor(Math.random() * (maxSpawn - minSpawn + 1)) + minSpawn;
+
+            const newEnemies = Array.from({ length: enemyCount }, (_, i) => {
+                const mk = mission.enemyType;
+                if (mk === 'golem') {
+                    return { type: mk, id: `golem_${i}`, name: `Rock Golem ${i + 1}`, maxHp: 80, currentHp: 80, ap: 15, def: 5, spd: 4, actionGauge: Math.random() * 20 };
+                }
+                if (mk === 'blob') {
+                    return { type: mk, id: `blob_${i}`, name: `Bloblin ${i + 1}`, maxHp: 40, currentHp: 40, ap: 8, def: 0, spd: 8, actionGauge: Math.random() * 50 };
+                }
+                if (mk === 'rat') {
+                    return { type: mk, id: `rat_${i}`, name: `Giant Rat ${i + 1}`, maxHp: 22, currentHp: 22, ap: 4, def: 0, spd: 10, actionGauge: Math.random() * 50 };
+                }
+                if (mk === 'ice_imp') {
+                    return { type: mk, id: `ice_imp_${i}`, name: `Ice Imp ${i + 1}`, maxHp: 50, currentHp: 50, ap: 10, def: 2, spd: 10, actionGauge: Math.random() * 40 };
+                }
+                if (mk === 'dummy') {
+                    return { type: mk, id: `dummy_0`, name: `Training Dummy`, maxHp: 100, currentHp: 100, ap: 1, def: 9999, spd: 0, actionGauge: 0 };
+                }
+                // fallback
+                return { id: `mob_${i}`, name: `Foe ${i + 1}`, maxHp: 30, currentHp: 30, ap: 6, def: 0, spd: 8, actionGauge: Math.random() * 50 };
+            });
+
+            // Batch Updates
+            const batch = writeBatch(db);
+
+            // 1. Mark troops as inCombat
+            validSelectedIds.forEach(uid => {
+                const tRef = doc(db, 'artifacts', appId, 'users', user.uid, 'troops', uid);
+                batch.update(tRef, { inCombat: true, actionGauge: 0, battleKills: 0, combatHitCount: 0, combatAttackCount: 0 });
+            });
+
+            // 2. Create Combat Session
+            const combatRef = doc(db, 'artifacts', appId, 'users', user.uid, 'system', 'combat');
+            batch.set(combatRef, {
+                active: true, enemies: newEnemies, troopIds: validSelectedIds, log: [`Deployed to ${mission.name}`], tick: 0
+            });
+
+            await batch.commit();
+
+            // 3. Update Local State
+            setEnemies(newEnemies);
+            // FIX: Optimistically update local troops to show them in combat immediately, 
+            // since the snapshot listener is blocked during 'fighting' state.
+            setTroops(prev => prev.map(t =>
+                validSelectedIds.includes(t.uid)
+                    ? { ...t, inCombat: true, actionGauge: 0 }
+                    : t
+            ));
+            setGameState('fighting');
+            setCombatLog([`Deployed to ${mission.name}`]);
+            setView('combat');
+        } catch (e) {
+            console.error("Combat Start Error", e);
+            alert("Failed to start combat. Please check console.");
+            setGameState('idle');
         }
-
-        // Party size checks
-        if (validSelectedIds.length < (mission.minParty || 1)) {
-            alert(`This mission requires at least ${mission.minParty} character(s).`);
-            setAutoBattle(false);
-            return;
-        }
-        if (validSelectedIds.length > (mission.maxParty || 4)) {
-            // Trim to allowed party size
-            validSelectedIds = validSelectedIds.slice(0, mission.maxParty);
-        }
-
-        if (validSelectedIds.length === 0) {
-            setAutoBattle(false);
-            return;
-        }
-
-        setLastMissionKey(missionKey);
-
-        // Determine enemy count from mission if provided
-        const minSpawn = mission.spawnMin || 1;
-        const maxSpawn = mission.spawnMax || Math.max(1, Math.floor(Math.random() * 4) + 1);
-        const enemyCount = Math.floor(Math.random() * (maxSpawn - minSpawn + 1)) + minSpawn;
-
-        const newEnemies = Array.from({ length: enemyCount }, (_, i) => {
-            const mk = mission.enemyType;
-            if (mk === 'golem') {
-                return { type: mk, id: `golem_${i}`, name: `Rock Golem ${i + 1}`, maxHp: 80, currentHp: 80, ap: 15, def: 5, spd: 4, actionGauge: Math.random() * 20 };
-            }
-            if (mk === 'blob') {
-                return { type: mk, id: `blob_${i}`, name: `Bloblin ${i + 1}`, maxHp: 40, currentHp: 40, ap: 8, def: 0, spd: 8, actionGauge: Math.random() * 50 };
-            }
-            if (mk === 'rat') {
-                return { type: mk, id: `rat_${i}`, name: `Giant Rat ${i + 1}`, maxHp: 22, currentHp: 22, ap: 4, def: 0, spd: 10, actionGauge: Math.random() * 50 };
-            }
-            if (mk === 'ice_imp') {
-                return { type: mk, id: `ice_imp_${i}`, name: `Ice Imp ${i + 1}`, maxHp: 50, currentHp: 50, ap: 10, def: 2, spd: 10, actionGauge: Math.random() * 40 };
-            }
-            if (mk === 'dummy') {
-                return { type: mk, id: `dummy_0`, name: `Training Dummy`, maxHp: 100, currentHp: 100, ap: 1, def: 9999, spd: 0, actionGauge: 0 };
-            }
-            // fallback
-            return { id: `mob_${i}`, name: `Foe ${i + 1}`, maxHp: 30, currentHp: 30, ap: 6, def: 0, spd: 8, actionGauge: Math.random() * 50 };
-        });
-
-        // Batch Updates
-        const batch = writeBatch(db);
-
-        // 1. Mark troops as inCombat
-        validSelectedIds.forEach(uid => {
-            const tRef = doc(db, 'artifacts', appId, 'users', user.uid, 'troops', uid);
-            batch.update(tRef, { inCombat: true, actionGauge: 0, battleKills: 0, combatHitCount: 0, combatAttackCount: 0 });
-        });
-
-        // 2. Create Combat Session
-        const combatRef = doc(db, 'artifacts', appId, 'users', user.uid, 'system', 'combat');
-        batch.set(combatRef, {
-            active: true, enemies: newEnemies, troopIds: validSelectedIds, log: [`Deployed to ${mission.name}`], tick: 0
-        });
-
-        await batch.commit();
-
-        // 3. Update Local State
-        setEnemies(newEnemies);
-        // FIX: Optimistically update local troops to show them in combat immediately, 
-        // since the snapshot listener is blocked during 'fighting' state.
-        setTroops(prev => prev.map(t =>
-            validSelectedIds.includes(t.uid)
-                ? { ...t, inCombat: true, actionGauge: 0 }
-                : t
-        ));
-        setGameState('fighting');
-        setCombatLog([`Deployed to ${mission.name}`]);
-        setView('combat');
     };
 
     // --- Auto Battle Trigger ---
