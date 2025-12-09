@@ -53,7 +53,7 @@ export default function ProfilePublic({ profileUid, user, appId, setView, setPro
                 <div>
                     <h2 className="text-xl font-bold flex items-center gap-2">
                         {profile.displayName || '(Unnamed)'}
-                        {profile.title && <span className="text-xs font-normal text-amber-500 border border-amber-900/50 bg-amber-900/20 px-2 py-0.5 rounded-full uppercase tracking-wider">{profile.title}</span>}
+                        {profile.title && <span className="text-sm font-bold text-green-400">[{profile.title}]</span>}
                     </h2>
                     <div className="text-xs text-slate-400">{profile.bio || ''}</div>
                     <div className="text-xs text-slate-500 mt-1">Total Missions Completed: <span className="font-semibold text-amber-400">{totalMissions}</span></div>
