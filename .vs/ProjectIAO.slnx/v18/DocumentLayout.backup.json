@@ -3,12 +3,16 @@
   "WorkspaceRootPath": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\MissionSelect.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\views\\MissionSelect.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\hooks\\useCombat.js||{3B902123-F8A7-4915-9F01-361F908088D0}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\hooks\\useCombat.js||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\CombatResult.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\views\\CombatResult.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\MissionSelect.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\views\\MissionSelect.jsx||{3B902123-F8A7-4915-9F01-361F908088D0}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\config\\gameData.js||{3B902123-F8A7-4915-9F01-361F908088D0}",
@@ -38,7 +42,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Bookmark",
@@ -50,33 +54,46 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
+              "Title": "CombatResult.jsx",
+              "DocumentMoniker": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\CombatResult.jsx",
+              "RelativeDocumentMoniker": "src\\views\\CombatResult.jsx",
+              "ToolTip": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\CombatResult.jsx",
+              "RelativeToolTip": "src\\views\\CombatResult.jsx",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAFkAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2025-12-09T00:26:27.855Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
               "Title": "MissionSelect.jsx",
               "DocumentMoniker": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\MissionSelect.jsx",
               "RelativeDocumentMoniker": "src\\views\\MissionSelect.jsx",
               "ToolTip": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\MissionSelect.jsx",
               "RelativeToolTip": "src\\views\\MissionSelect.jsx",
-              "ViewState": "AgIAAG4AAAAAAAAAAAAAwIUAAAAOAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAIUAAAAOAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
               "WhenOpened": "2025-12-09T00:16:02.182Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "useCombat.js",
               "DocumentMoniker": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\hooks\\useCombat.js",
               "RelativeDocumentMoniker": "src\\hooks\\useCombat.js",
               "ToolTip": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\hooks\\useCombat.js",
               "RelativeToolTip": "src\\hooks\\useCombat.js",
-              "ViewState": "AgIAAEEBAAAAAAAAAAAowFsBAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAACMBAAAAAAAAAAAswC4BAAAdAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
               "WhenOpened": "2025-12-09T00:12:47.691Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "gameData.js",
               "DocumentMoniker": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\config\\gameData.js",
               "RelativeDocumentMoniker": "src\\config\\gameData.js",
@@ -84,12 +101,11 @@
               "RelativeToolTip": "src\\config\\gameData.js",
               "ViewState": "AgIAAGoAAAAAAAAAAAAowBwAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-12-09T00:12:31.71Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-09T00:12:31.71Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "Inventory.jsx",
               "DocumentMoniker": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\Inventory.jsx",
               "RelativeDocumentMoniker": "src\\views\\Inventory.jsx",
@@ -97,12 +113,11 @@
               "RelativeToolTip": "src\\views\\Inventory.jsx",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2025-12-09T00:08:56.029Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-09T00:08:56.029Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 5,
               "Title": "App.jsx",
               "DocumentMoniker": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\App.jsx",
               "RelativeDocumentMoniker": "src\\App.jsx",
@@ -110,12 +125,11 @@
               "RelativeToolTip": "src\\App.jsx",
               "ViewState": "AgIAACEBAAAAAAAAAAAAADMBAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2025-12-09T00:02:29.745Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-09T00:02:29.745Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 6,
               "Title": "ProfilePublic.jsx",
               "DocumentMoniker": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\views\\ProfilePublic.jsx",
               "RelativeDocumentMoniker": "src\\views\\ProfilePublic.jsx",
@@ -123,12 +137,11 @@
               "RelativeToolTip": "src\\views\\ProfilePublic.jsx",
               "ViewState": "AgIAADkAAAAAAAAAAAAMwA0AAAAVAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2025-12-09T00:02:20.297Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-09T00:02:20.297Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 7,
               "Title": "Navbar.jsx",
               "DocumentMoniker": "C:\\Users\\McQux\\source\\repos\\Abusoki\\ProjectIAO\\src\\components\\Navbar.jsx",
               "RelativeDocumentMoniker": "src\\components\\Navbar.jsx",
@@ -136,8 +149,7 @@
               "RelativeToolTip": "src\\components\\Navbar.jsx",
               "ViewState": "AgIAAAwAAAAAAAAAAAAMwAgAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2025-12-09T00:02:10.499Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-09T00:02:10.499Z"
             }
           ]
         }

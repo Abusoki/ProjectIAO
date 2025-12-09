@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, GraduationCap, ChefHat, Sword, Hammer, Package, Users, Inbox } from 'lucide-react';
+import { User, GraduationCap, ChefHat, Sword, Package, Users, Inbox } from 'lucide-react';
 
 export default function Navbar({ currentView, setView, gameState, user, setProfileUid }) {
     const NavBtn = ({ view, icon: Icon, label, color, onClick }) => (
@@ -17,8 +17,6 @@ export default function Navbar({ currentView, setView, gameState, user, setProfi
             <NavBtn view="inventory" icon={Package} label="Bag" color="text-blue-400" />
             <NavBtn view="skills" icon={GraduationCap} label="Skills" color="text-purple-500" />
             <NavBtn view="jobs" icon={ChefHat} label="Jobs" color="text-orange-500" />
-            <NavBtn view="kitchen" icon={ChefHat} label="Kitchen" color="text-amber-500" />
-            <NavBtn view="smithing" icon={Hammer} label="Smith" color="text-gray-400" />
 
             {/* Social group */}
             <NavBtn view="profiles_search" icon={Users} label="Social" color="text-green-400" />
@@ -35,7 +33,6 @@ export default function Navbar({ currentView, setView, gameState, user, setProfi
                         setProfileUid(user.uid);
                         setView('profile_public');
                     } else {
-                        // fallback to social page if not signed-in
                         setView('profiles_search');
                     }
                 }}

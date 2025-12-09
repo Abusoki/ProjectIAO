@@ -296,31 +296,24 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             const combatRef = doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combat');
             batch.update(combatRef, { active: false });
             await batch.commit();
+
+            // New result logging:
+            const resultId = `${user.uid}_${Date.now()}`;
+            const resultDoc = {
+                id: resultId,
+                timestamp: Date.now(),
+                outcome: 'victory',
+                missionKey: null,
+                enemySnapshot: enemies.map(e => ({ id: e.id, name: e.name, currentHp: e.currentHp, maxHp: e.maxHp })),
+                survivors: survivors.map(u => ({ uid: u.uid, name: u.name, currentHp: u.currentHp, level: u.level, battleKills: u.battleKills || 0 })),
+                loot: newInv.filter(i => i.id.startsWith('drop_')).map(l => ({ id: l.id, name: l.name, type: l.type, desc: l.desc, stats: l.stats })),
+                xpPerSurvivor: xpGain,
+                log: combatLog.slice(-40)
+            };
+            const resultRef = doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combatResults', resultId);
+            await setDoc(resultRef, resultDoc);
         } catch (e) {
-            console.error('Batched victory commit failed', e);
-            // fallback logic kept as before...
-            const updates = survivors.map(async (unit) => {
-                if (unit.currentHp <= 0) {
-                    return deleteDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', unit.uid));
-                }
-                
-                let newXp = (unit.xp || 0) + xpGain;
-                let newLevel = unit.level;
-                if (newLevel < 10 && newXp >= LEVEL_XP_CURVE[newLevel]) newLevel++;
-                const effectiveStats = getEffectiveStats({ ...unit, level: newLevel }, unit.equipment ? Object.values(unit.equipment) : []);
-                const isCloseCall = (unit.currentHp / effectiveStats.maxHp) <= 0.05;
-                const newLore = { 
-                    missionsWon: (unit.lore?.missionsWon || 0) + 1, 
-                    kills: (unit.lore?.kills || 0) + (unit.battleKills || 0), 
-                    closeCalls: (unit.lore?.closeCalls || 0) + (isCloseCall ? 1 : 0) 
-                };
-                await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', unit.uid), { 
-                    xp: newXp, level: newLevel, lore: newLore, inCombat: false, actionGauge: 0 
-                });
-            });
-            await Promise.all(updates);
-            await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'profile', 'data'), { gold: (user.gold || 0) + 15, inventory: newInv });
-            await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combat'), { active: false });
+            console.error('Error logging combat result', e);
         }
 
         // Final safety cleanup to ensure no troop remains flagged as inCombat
