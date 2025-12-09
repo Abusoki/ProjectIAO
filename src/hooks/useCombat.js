@@ -354,7 +354,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                     const effectiveStats = getEffectiveStats({ ...unit, level: newLevel }, unit.equipment ? Object.values(unit.equipment) : []);
                     const isCloseCall = (unit.currentHp / effectiveStats.maxHp) <= 0.05;
 
-                    const isCloseCall = (unit.currentHp / effectiveStats.maxHp) <= 0.05;
+
 
                     const newLore = {
                         missionsWon: (unit.lore?.missionsWon || 0) + 1,
