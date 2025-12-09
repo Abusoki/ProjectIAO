@@ -86,7 +86,7 @@ export default function App() {
     useGameLoop(user, troops, inventory, gameState, profile);
 
     const { combatLog, setCombatLog, damageEvents } = useCombat(
-        user, troops, enemies, gameState, handleGameStateChange, setEnemies, setView, selectedTroops, inventory, autoBattle, setAutoBattle
+        user, troops, enemies, gameState, handleGameStateChange, setEnemies, setView, selectedTroops, inventory, autoBattle, setAutoBattle, setTroops
     );
 
     // --- MAIN COMBAT START FUNCTION ---
@@ -159,6 +159,13 @@ export default function App() {
 
         // 3. Update Local State
         setEnemies(newEnemies);
+        // FIX: Optimistically update local troops to show them in combat immediately, 
+        // since the snapshot listener is blocked during 'fighting' state.
+        setTroops(prev => prev.map(t =>
+            validSelectedIds.includes(t.uid)
+                ? { ...t, inCombat: true, actionGauge: 0 }
+                : t
+        ));
         setGameState('fighting');
         setCombatLog([`Deployed to ${mission.name}`]);
         setView('combat');
