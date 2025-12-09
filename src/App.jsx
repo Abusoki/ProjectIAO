@@ -24,8 +24,7 @@ import Jobs from './views/Jobs';
 import ProfilesSearch from './views/ProfilesSearch';
 import ProfilePublic from './views/ProfilePublic';
 import ProfileEdit from './views/ProfileEdit';
-import ProfilePublic from './views/ProfilePublic';
-import ProfileEdit from './views/ProfileEdit';
+
 import FriendsInbox from './views/FriendsInbox';
 import About from './views/About';
 import ChangeLog from './views/ChangeLog';
