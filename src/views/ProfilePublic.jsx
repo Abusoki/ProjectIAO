@@ -4,7 +4,7 @@ import { db } from '../config/firebase';
 import { MessageSquare, Edit, User, Users, Sword, Shield, Utensils, Hammer, Lock, Award } from 'lucide-react';
 import { ACHIEVEMENTS } from '../config/gameData';
 
-export default function ProfilePublic({ profileUid, user, appId, setView, setProfileUid }) {
+export default function ProfilePublic({ profileUid, user, appId, setView, setProfileUid, setActiveConversationUid }) {
     const [profile, setProfile] = useState(null);
     const [troopsPreview, setTroopsPreview] = useState([]); // top N for preview
     const [totalMissions, setTotalMissions] = useState(0);
@@ -64,7 +64,17 @@ export default function ProfilePublic({ profileUid, user, appId, setView, setPro
                             <Edit size={14} /> Edit
                         </button>
                     )}
-                    <button onClick={() => alert('Messaging is not implemented yet')} className="px-3 py-1 bg-slate-700 rounded text-xs flex items-center gap-2"><MessageSquare size={14} />Message</button>
+                    {!isMe && (
+                        <button
+                            onClick={() => {
+                                setActiveConversationUid(profileUid);
+                                setView('messages');
+                            }}
+                            className="px-3 py-1 bg-emerald-700 rounded text-xs flex items-center gap-2"
+                        >
+                            <MessageSquare size={14} /> Message
+                        </button>
+                    )}
                 </div>
             </div>
 

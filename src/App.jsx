@@ -26,6 +26,7 @@ import ProfilePublic from './views/ProfilePublic';
 import ProfileEdit from './views/ProfileEdit';
 
 import FriendsInbox from './views/FriendsInbox';
+import Messages from './views/Messages';
 import About from './views/About';
 import ChangeLog from './views/ChangeLog';
 
@@ -41,6 +42,7 @@ export default function App() {
     const [tavernState, setTavernState] = useState({ recruits: [], nextRefresh: 0 });
     const [selectedUnitId, setSelectedUnitId] = useState(null);
     const [profileUid, setProfileUid] = useState(null);
+    const [activeConversationUid, setActiveConversationUid] = useState(null);
     const [userCount, setUserCount] = useState(0);
 
     // Combat State
@@ -348,7 +350,8 @@ export default function App() {
                 {view === 'jobs' && <Jobs troops={troops} inventory={inventory} user={user} appId={appId} />}
                 {view === 'profiles_search' && <ProfilesSearch user={user} appId={appId} setView={setView} setProfileUid={setProfileUid} />}
                 {view === 'friends_inbox' && <FriendsInbox user={user} appId={appId} setView={setView} setProfileUid={setProfileUid} />}
-                {view === 'profile_public' && profileUid && <ProfilePublic profileUid={profileUid} user={user} appId={appId} setView={setView} setProfileUid={setProfileUid} />}
+                {view === 'messages' && <Messages user={user} appId={appId} activeConversationUid={activeConversationUid} setActiveConversationUid={setActiveConversationUid} />}
+                {view === 'profile_public' && profileUid && <ProfilePublic profileUid={profileUid} user={user} appId={appId} setView={setView} setProfileUid={setProfileUid} setActiveConversationUid={setActiveConversationUid} />}
                 {view === 'profile_edit' && <ProfileEdit user={user} appId={appId} setView={setView} setProfileUid={setProfileUid} />}
                 {view === 'about' && <About setView={setView} appId={appId} />}
                 {view === 'changelog' && <ChangeLog setView={setView} />}
