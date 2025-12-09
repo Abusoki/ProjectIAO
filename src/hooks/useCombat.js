@@ -197,7 +197,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
 
             // 1) Conditionally update combat doc only if changed
             if (lastSentCombatRef.current !== combatSnapshot) {
-                batch.update(combatRef, { enemies: currentEnemies, active: !battleOver }).catch(() => { });
+                batch.update(combatRef, { enemies: currentEnemies, active: !battleOver });
                 batchOps++;
                 lastSentCombatRef.current = combatSnapshot;
             }
@@ -252,46 +252,55 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
     }, [gameState]); // REFACTOR: Dependent ONLY on gameState to start/stop. Loop handles data via Refs.
 
     const handleVictory = async (survivors) => {
-        setCombatLog(prev => [...prev, "🏆 VICTORY! Processing rewards..."]);
-        setGameState('victory');
-        setCombatLog(prev => [...prev, "VICTORY! Checking for loot..."]);
-        const xpGain = 20;
-
-        let newInv = [...inventoryRef.current];
-
-        let dropChance = 0.1;
-        const hasGloves = survivors.some(t => t.equipment?.gloves?.name === 'Slimey Gloves');
-        if (hasGloves) dropChance *= 2;
-
-        // Determine enemy type by id or name
-        const leadEnemy = enemies[0];
-        const enemyType = (leadEnemy?.id || '').split('_')[0] || (leadEnemy?.name || '').toLowerCase();
-
-        // Use centralized ENEMY_DROPS mapping
-        const pool = ENEMY_DROPS[enemyType] || [];
-        for (const dropRef of pool) {
-            try {
-                if (Math.random() < (dropRef.chance || 0)) {
-                    const def = DROPS[dropRef.id];
-                    if (!def) continue;
-                    newInv.push({ id: generateId(), ...def });
-                    setCombatLog(prev => [...prev, `+ ${def.name}`]);
-                }
-            } catch (e) { console.error('Drop roll failed', e); }
-        }
-
-        // As a fallback for old enemyType cases (if no pool found) keep a generic small chance for resources
-        if (pool.length === 0) {
-            if (Math.random() < dropChance) {
-                const def = DROPS.slime_paste || { id: generateId(), name: 'Slime Paste', type: 'resource', desc: 'Sticky.' };
-                newInv.push({ id: generateId(), ...def });
-                setCombatLog(prev => [...prev, `+ ${def.name}`]);
-            }
-        }
-
-        // Batch survivors updates to minimize writes
         try {
+            console.log("HandleVictory started. Setting state to victory.");
+            setGameState('victory');
+            setCombatLog(prev => [...prev, "🏆 VICTORY! Processing rewards..."]);
+
+            const xpGain = 20;
+            let newInv = [...inventoryRef.current];
+            let dropChance = 0.1;
+
+            if (survivors && survivors.length > 0) {
+                const hasGloves = survivors.some(t => t.equipment?.gloves?.name === 'Slimey Gloves');
+                if (hasGloves) dropChance *= 2;
+            }
+
+            // Determine enemy type by id or name
+            const leadEnemy = enemies[0];
+            const enemyType = (leadEnemy?.id || '').split('_')[0] || (leadEnemy?.name || '').toLowerCase();
+
+            // Safe Access to Drops
+            const dropsLookup = ENEMY_DROPS || {};
+            const itemLookup = DROPS || {};
+
+            const pool = dropsLookup[enemyType] || [];
+
+            // Limit pool iteration
+            for (const dropRef of pool) {
+                try {
+                    if (Math.random() < (dropRef.chance || 0)) {
+                        const def = itemLookup[dropRef.id];
+                        if (!def) continue;
+                        newInv.push({ id: generateId(), ...def });
+                        setCombatLog(prev => [...prev, `+ ${def.name}`]);
+                    }
+                } catch (e) { console.error('Drop roll failed', e); }
+            }
+
+            // Fallback drop logic
+            if (pool.length === 0) {
+                if (Math.random() < dropChance) {
+                    const fallbackItem = itemLookup.slime_paste || { id: generateId(), name: 'Slime Paste', type: 'resource', desc: 'Sticky.' };
+                    newInv.push({ id: generateId(), ...fallbackItem });
+                    setCombatLog(prev => [...prev, `+ ${fallbackItem.name}`]);
+                }
+            }
+
+            // Database Updates
             const batch = writeBatch(db);
+
+            // Update Survivors
             survivors.forEach((unit) => {
                 const ref = doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', unit.uid);
                 if (unit.currentHp <= 0) {
@@ -300,8 +309,11 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                     let newXp = (unit.xp || 0) + xpGain;
                     let newLevel = unit.level;
                     if (newLevel < 10 && newXp >= LEVEL_XP_CURVE[newLevel]) newLevel++;
+
+                    // Recalculate stats for safety
                     const effectiveStats = getEffectiveStats({ ...unit, level: newLevel }, unit.equipment ? Object.values(unit.equipment) : []);
                     const isCloseCall = (unit.currentHp / effectiveStats.maxHp) <= 0.05;
+
                     const newLore = {
                         missionsWon: (unit.lore?.missionsWon || 0) + 1,
                         kills: (unit.lore?.kills || 0) + (unit.battleKills || 0),
@@ -310,33 +322,44 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                     batch.update(ref, { xp: newXp, level: newLevel, lore: newLore, inCombat: false, actionGauge: 0 });
                 }
             });
+
+            // Update Profile
             const profileRef = doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'profile', 'data');
             batch.update(profileRef, { gold: (user.gold || 0) + 15, inventory: newInv });
+
+            // Close Combat Session
             const combatRef = doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combat');
             batch.update(combatRef, { active: false });
+
             await batch.commit();
 
-            // New result logging:
-            const resultId = `${user.uid}_${Date.now()}`;
-            const resultDoc = {
-                id: resultId,
-                timestamp: Date.now(),
-                outcome: 'victory',
-                missionKey: null,
-                enemySnapshot: enemies.map(e => ({ id: e.id, name: e.name, currentHp: e.currentHp, maxHp: e.maxHp })),
-                survivors: survivors.map(u => ({ uid: u.uid, name: u.name, currentHp: u.currentHp, level: u.level, battleKills: u.battleKills || 0 })),
-                loot: newInv.filter(i => i.id.startsWith('drop_')).map(l => ({ id: l.id, name: l.name, type: l.type, desc: l.desc, stats: l.stats })),
-                xpPerSurvivor: xpGain,
-                log: combatLog.slice(-40)
-            };
-            const resultRef = doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combatResults', resultId);
-            await setDoc(resultRef, resultDoc);
-        } catch (e) {
-            console.error('Error logging combat result', e);
-        }
+            // Log Result
+            try {
+                const resultId = `${user.uid}_${Date.now()}`;
+                const resultDoc = {
+                    id: resultId,
+                    timestamp: Date.now(),
+                    outcome: 'victory',
+                    missionKey: null,
+                    survivors: survivors.map(u => ({ uid: u.uid, name: u.name })),
+                    loot: newInv.filter(i => i.id.startsWith('drop_')), // Approximation
+                    log: combatLog.slice(-20)
+                };
+                // Fire-and-forget result log
+                setDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combatResults', resultId), resultDoc).catch(e => console.warn(e));
+            } catch (loggingErr) {
+                console.warn("Result logging failed", loggingErr);
+            }
 
-        // Final safety cleanup to ensure no troop remains flagged as inCombat
-        await cleanupInCombatFlags();
+            // Cleanup
+            await cleanupInCombatFlags();
+
+        } catch (err) {
+            console.error("CRITICAL ERROR IN HANDLE VICTORY", err);
+            setCombatLog(prev => [...prev, `Error processing victory: ${err.message}`]);
+            // Force state anyway
+            setGameState('victory');
+        }
     };
 
     const handleDefeat = async (party) => {
