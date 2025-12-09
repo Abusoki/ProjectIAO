@@ -171,17 +171,9 @@ export default function App() {
             await batch.commit();
 
             // 3. Update Local State
-            setEnemies(newEnemies);
-            // FIX: Optimistically update local troops to show them in combat immediately, 
-            // since the snapshot listener is blocked during 'fighting' state.
-            setTroops(prev => prev.map(t =>
-                validSelectedIds.includes(t.uid)
-                    ? { ...t, inCombat: true, actionGauge: 0 }
-                    : t
-            ));
-            setGameState('fighting');
+            // We rely entirely on the snapshot listener to switch state to 'fighting'
+            // This prevents "Fighting -> False -> Victory" loops and race conditions.
             setCombatLog([`Deployed to ${mission.name}`]);
-            setView('combat');
         } catch (e) {
             console.error("Combat Start Error", e);
             alert("Failed to start combat. Please check console.");
@@ -256,18 +248,19 @@ export default function App() {
                     // If we are 'victory' or 'defeat', ignoring this stale update prevents the loop.
                     if (gameStateRef.current === 'idle') {
                         setEnemies(data.enemies);
-                        if (data.troopIds) setSelectedTroops(data.troopIds);
+                        if (data.troopIds) {
+                            setSelectedTroops(data.troopIds);
+                            // ATOMIC SYNC: Force update troops to combat mode so useCombat sees them immediately,
+                            // ignoring the race condition with the main troops listener.
+                            setTroops(prev => prev.map(t =>
+                                data.troopIds.includes(t.uid) ? { ...t, inCombat: true, actionGauge: 0 } : t
+                            ));
+                        }
                         setGameState('fighting');
+                        setView('combat'); // Force view switch if not already
                     }
                 } else if (gameStateRef.current === 'fighting') {
                     // If DB says not active, but we are fighting, it means we won/lost elsewhere or need to finish
-                    // However, useCombat handles the victory transition locally first. 
-                    // This creates a failsafe if the local state thinks we are fighting but the server says we are done.
-                    // But usually useCombat sets victory locally first.
-                    // Let's keep the victory transition for safety, or we can trust useCombat.
-                    // If we trust useCombat, we might rely on it. 
-                    // But if this triggers, it might be due to a reset.
-                    // Actually, if data.active is false, we should probably respect that if we are fighting forever.
                     setGameState('victory');
                 }
             }
