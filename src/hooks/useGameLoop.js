@@ -2,10 +2,50 @@ import { useEffect } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { getEffectiveStats } from '../utils/mechanics';
-import { SKILL_XP_CURVE, MAX_COOKING_LEVEL, SMITHING_RECIPES } from '../config/gameData';
+import { SKILL_XP_CURVE, MAX_COOKING_LEVEL, SMITHING_RECIPES, ACHIEVEMENTS } from '../config/gameData';
 import { generateId } from '../utils/helpers';
 
-export function useGameLoop(user, troops, inventory, gameState) {
+export function useGameLoop(user, troops, inventory, gameState, profile) {
+    // 3. ACHIEVEMENT CHECK LOOPS
+    useEffect(() => {
+        if (!user || !profile) return;
+
+        const unlocked = profile.achievements || [];
+        const newUnlocks = [];
+
+        // Helper to check if already unlocked
+        const isLocked = (id) => !unlocked.includes(id);
+
+        // 1. First Recruit
+        if (isLocked('first_recruit') && troops.length >= 1) newUnlocks.push('first_recruit');
+
+        // 2. Full Squad
+        if (isLocked('full_squad') && troops.length >= 4) newUnlocks.push('full_squad');
+
+        // Calculate aggregate stats
+        const totalWins = troops.reduce((acc, t) => acc + (t.lore?.missionsWon || 0), 0);
+
+        // 3. First Blood
+        if (isLocked('first_blood') && totalWins >= 1) newUnlocks.push('first_blood');
+
+        // 4. Veteran
+        if (isLocked('veteran') && totalWins >= 10) newUnlocks.push('veteran');
+
+        // 5. Master Chef
+        if (isLocked('master_chef') && troops.some(t => (t.cooking?.level || 1) >= 5)) newUnlocks.push('master_chef');
+
+        // 6. Blacksmith
+        if (isLocked('blacksmith') && troops.some(t => (t.smithing?.level || 1) >= 5)) newUnlocks.push('blacksmith');
+
+        if (newUnlocks.length > 0) {
+            const updated = [...unlocked, ...newUnlocks];
+            // We update meta which is listened to by App.jsx, refreshing 'profile'
+            updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'profile', 'meta'), {
+                achievements: updated
+            });
+        }
+    }, [user, troops, inventory, gameState, profile]);
+
     // 1. REGEN LOOP
     useEffect(() => {
         if (!user) return;

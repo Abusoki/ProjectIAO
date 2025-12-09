@@ -121,3 +121,12 @@ export const SMITHING_XP_CURVE = SKILL_XP_CURVE;
 // Tavern refresh set to 2 hours now
 export const TAVERN_REFRESH_MS = 2 * 60 * 60 * 1000;
 export const NAMES = ["Kael", "Thar", "Olg", "Brim", "Syl", "Vex", "Dorn", "Lira", "Mok", "Zed", "Grom", "Fae", "Urk", "Zil"];
+
+export const ACHIEVEMENTS = [
+    { id: 'first_recruit', name: 'First Recruit', desc: 'Recruit your first troop.', icon: 'User' },
+    { id: 'full_squad', name: 'Full Squad', desc: 'Have a full party of 4 troops.', icon: 'Users' },
+    { id: 'first_blood', name: 'First Blood', desc: 'Win your first battle.', icon: 'Sword' },
+    { id: 'veteran', name: 'Veteran', desc: 'Win 10 battles.', icon: 'Shield' },
+    { id: 'master_chef', name: 'Master Chef', desc: 'Reach Cooking Level 5 on any unit.', icon: 'Utensils' },
+    { id: 'blacksmith', name: 'Blacksmith', desc: 'Reach Smithing Level 5 on any unit.', icon: 'Hammer' }
+];

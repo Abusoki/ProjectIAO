@@ -83,7 +83,7 @@ export default function App() {
     };
 
     // --- Hooks Logic ---
-    useGameLoop(user, troops, inventory, gameState);
+    useGameLoop(user, troops, inventory, gameState, profile);
 
     const { combatLog, setCombatLog, damageEvents } = useCombat(
         user, troops, enemies, gameState, handleGameStateChange, setEnemies, setView, selectedTroops, inventory, autoBattle, setAutoBattle
@@ -180,14 +180,20 @@ export default function App() {
     useEffect(() => {
         return onAuthStateChanged(auth, async (u) => {
             setUser(u);
-            if (u) {
-                const profRef = doc(db, 'artifacts', appId, 'users', u.uid, 'profile', 'meta');
-                const snap = await getDoc(profRef);
-                if (!snap.exists() || !snap.data().displayName) setShowNameModal(true);
-                else setProfile(snap.data());
-            }
         });
     }, []);
+
+    useEffect(() => {
+        if (!user) return;
+        const unsub = onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'meta'), (snap) => {
+            if (!snap.exists() || !snap.data().displayName) {
+                setShowNameModal(true);
+            } else {
+                setProfile(snap.data());
+            }
+        });
+        return () => unsub();
+    }, [user]);
 
     const saveName = async () => {
         if (!newName.trim()) return;
