@@ -104,79 +104,86 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                 }
             });
 
-            const actors = [...fighters, ...currentEnemies].filter(u => u.currentHp > 0 && u.actionGauge >= 100).sort((a, b) => b.actionGauge - a.actionGauge);
+            // FAILSAFE: Check victory condition BEFORE acting. 
+            // If all enemies are dead, stop immediately.
+            if (currentEnemies.every(e => e.currentHp <= 0)) {
+                battleOver = true;
+            } else {
 
-            actors.forEach(actor => {
-                if (battleOver || actor.currentHp <= 0) return;
-                actor.actionGauge -= 100;
-                const isPlayer = !!actor.uid;
+                const actors = [...fighters, ...currentEnemies].filter(u => u.currentHp > 0 && u.actionGauge >= 100).sort((a, b) => b.actionGauge - a.actionGauge);
 
-                // When a flicker actor act, consume one flicker charge
-                if (actor.skills?.row1 === 'elvish_flicker' && actor._elvishFlickerRemaining > 0) {
-                    actor._elvishFlickerRemaining = Math.max(0, (actor._elvishFlickerRemaining || 0) - 1);
-                }
+                actors.forEach(actor => {
+                    if (battleOver || actor.currentHp <= 0) return;
+                    actor.actionGauge -= 100;
+                    const isPlayer = !!actor.uid;
 
-                const targets = isPlayer ? currentEnemies.filter(e => e.currentHp > 0) : fighters.filter(t => t.currentHp > 0);
-                if (targets.length === 0) { battleOver = true; return; }
-                const target = targets[Math.floor(Math.random() * targets.length)];
+                    // When a flicker actor acts, consume one flicker charge
+                    if (actor.skills?.row1 === 'elvish_flicker' && actor._elvishFlickerRemaining > 0) {
+                        actor._elvishFlickerRemaining = Math.max(0, (actor._elvishFlickerRemaining || 0) - 1);
+                    }
 
-                let dmgMod = 1.0;
-                if (isPlayer && actor.skills?.row1 === 'oil_concentrated') {
-                    actor.combatAttackCount = (actor.combatAttackCount || 0) + 1;
-                    if (actor.combatAttackCount % 3 === 0) dmgMod = 1.1;
-                }
+                    const targets = isPlayer ? currentEnemies.filter(e => e.currentHp > 0) : fighters.filter(t => t.currentHp > 0);
+                    if (targets.length === 0) { battleOver = true; return; }
+                    const target = targets[Math.floor(Math.random() * targets.length)];
 
-                const stats = isPlayer ? getEffectiveStats(actor) : actor;
-                const targetStats = isPlayer ? target : getEffectiveStats(target);
+                    let dmgMod = 1.0;
+                    if (isPlayer && actor.skills?.row1 === 'oil_concentrated') {
+                        actor.combatAttackCount = (actor.combatAttackCount || 0) + 1;
+                        if (actor.combatAttackCount % 3 === 0) dmgMod = 1.1;
+                    }
 
-                let rawDmg = (stats.ap * dmgMod * (0.8 + Math.random() * 0.4)) - (targetStats.def || 0);
-                let finalDmg = Math.max(1, Math.floor(rawDmg));
+                    const stats = isPlayer ? getEffectiveStats(actor) : actor;
+                    const targetStats = isPlayer ? target : getEffectiveStats(target);
 
-                // Initialize mindset counter for targets that have it (runtime-only)
-                if (target.skills?.row1 === 'elvish_mindset' && target._elvishMindsetRemaining === undefined) {
-                    target._elvishMindsetRemaining = 3;
-                }
+                    let rawDmg = (stats.ap * dmgMod * (0.8 + Math.random() * 0.4)) - (targetStats.def || 0);
+                    let finalDmg = Math.max(1, Math.floor(rawDmg));
 
-                // Elvish Mindset: prevent first N incoming hits
-                if (target.skills?.row1 === 'elvish_mindset' && target._elvishMindsetRemaining > 0) {
-                    target._elvishMindsetRemaining = Math.max(0, target._elvishMindsetRemaining - 1);
-                    logUpdates.push(`${target.name} shrugs off the hit!`);
-                    addDamageEvent(target.id || target.uid, 0, 'block');
-                    // Do not apply damage or death logic for this hit
-                } else {
-                    target.currentHp -= finalDmg;
-                    logUpdates.push(`${actor.name} hits ${target.name} for ${finalDmg}`);
-                    addDamageEvent(target.id || target.uid, finalDmg, 'damage');
+                    // Initialize mindset counter for targets that have it (runtime-only)
+                    if (target.skills?.row1 === 'elvish_mindset' && target._elvishMindsetRemaining === undefined) {
+                        target._elvishMindsetRemaining = 3;
+                    }
 
-                    if (isPlayer && actor.skills?.row1 === 'oil_refined') {
-                        actor.combatHitCount = (actor.combatHitCount || 0) + 1;
-                        if (actor.combatHitCount % 5 === 0) {
-                            const heal = 5;
-                            actor.currentHp = Math.min(stats.maxHp, actor.currentHp + heal);
-                            addDamageEvent(actor.uid, heal, 'heal');
-                            logUpdates.push(`${actor.name} heals ${heal} HP`);
+                    // Elvish Mindset: prevent first N incoming hits
+                    if (target.skills?.row1 === 'elvish_mindset' && target._elvishMindsetRemaining > 0) {
+                        target._elvishMindsetRemaining = Math.max(0, target._elvishMindsetRemaining - 1);
+                        logUpdates.push(`${target.name} shrugs off the hit!`);
+                        addDamageEvent(target.id || target.uid, 0, 'block');
+                        // Do not apply damage or death logic for this hit
+                    } else {
+                        target.currentHp -= finalDmg;
+                        logUpdates.push(`${actor.name} hits ${target.name} for ${finalDmg}`);
+                        addDamageEvent(target.id || target.uid, finalDmg, 'damage');
+
+                        if (isPlayer && actor.skills?.row1 === 'oil_refined') {
+                            actor.combatHitCount = (actor.combatHitCount || 0) + 1;
+                            if (actor.combatHitCount % 5 === 0) {
+                                const heal = 5;
+                                actor.currentHp = Math.min(stats.maxHp, actor.currentHp + heal);
+                                addDamageEvent(actor.uid, heal, 'heal');
+                                logUpdates.push(`${actor.name} heals ${heal} HP`);
+                            }
+                        }
+
+                        if (target.currentHp <= 0) {
+                            logUpdates.push(`☠️ ${target.name} died!`);
+                            if (isPlayer) actor.battleKills = (actor.battleKills || 0) + 1;
                         }
                     }
 
-                    if (target.currentHp <= 0) {
-                        logUpdates.push(`☠️ ${target.name} died!`);
-                        if (isPlayer) actor.battleKills = (actor.battleKills || 0) + 1;
+                    // Mark players/targets as dirty for potential DB write
+                    if (isPlayer) {
+                        dirtyTroops.set(actor.uid, {
+                            uid: actor.uid,
+                            currentHp: actor.currentHp,
+                            actionGauge: actor.actionGauge,
+                            battleKills: actor.battleKills || 0,
+                            combatHitCount: actor.combatHitCount || 0,
+                            combatAttackCount: actor.combatAttackCount || 0,
+                            inCombat: true
+                        });
                     }
-                }
-
-                // Mark players/targets as dirty for potential DB write
-                if (isPlayer) {
-                    dirtyTroops.set(actor.uid, {
-                        uid: actor.uid,
-                        currentHp: actor.currentHp,
-                        actionGauge: actor.actionGauge,
-                        battleKills: actor.battleKills || 0,
-                        combatHitCount: actor.combatHitCount || 0,
-                        combatAttackCount: actor.combatAttackCount || 0,
-                        inCombat: true
-                    });
-                }
-            });
+                });
+            } // End else (not Failsafe)
 
             // Update UI/State with new values
             setEnemies([...currentEnemies]);
