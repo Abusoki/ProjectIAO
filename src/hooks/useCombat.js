@@ -80,6 +80,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             // We trust the refs are primed by the idle state sync
         }
 
+        let lastSaveTime = 0;
         const interval = setInterval(() => {
             if (processingResult.current) return;
 
@@ -203,44 +204,50 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             if (logUpdates.length > 0) setCombatLog(prev => [...prev.slice(-30), ...logUpdates]);
 
             // --- BATCH PERSISTENCE LOGIC ---
-            const batch = writeBatch(db);
-            const combatSnapshot = `${currentEnemies.map(e => e.currentHp).join('|')}|${!battleOver}`;
+            const shouldSave = (Date.now() - lastSaveTime > 5000) || battleOver;
 
-            // 1) Conditionally update combat doc only if changed
-            if (lastSentCombatRef.current !== combatSnapshot) {
-                batch.update(combatRef, { enemies: currentEnemies, active: !battleOver });
-                batchOps++;
-                lastSentCombatRef.current = combatSnapshot;
-            }
+            if (shouldSave) {
+                const batch = writeBatch(db);
+                const combatSnapshot = `${currentEnemies.map(e => e.currentHp).join('|')}|${!battleOver}`;
 
-            // 2) For each dirty troop check lastSentTroopsRef to avoid redundant writes
-            dirtyTroops.forEach((t) => {
-                const key = t.uid;
-                const last = lastSentTroopsRef.current.get(key);
-                // compare relevant fields
-                const snapshot = `${t.currentHp}|${t.actionGauge}|${t.battleKills}|${t.combatHitCount}|${t.combatAttackCount}|${t.inCombat}`;
-                if (last !== snapshot) {
-                    const troopRef = doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', key);
-                    batch.update(troopRef, {
-                        currentHp: t.currentHp,
-                        actionGauge: t.actionGauge,
-                        battleKills: t.battleKills || 0,
-                        combatHitCount: t.combatHitCount || 0,
-                        combatAttackCount: t.combatAttackCount || 0,
-                        inCombat: t.inCombat || false
-                    });
-                    lastSentTroopsRef.current.set(key, snapshot);
+                // 1) Conditionally update combat doc only if changed
+                if (lastSentCombatRef.current !== combatSnapshot) {
+                    batch.update(combatRef, { enemies: currentEnemies, active: !battleOver });
                     batchOps++;
+                    lastSentCombatRef.current = combatSnapshot;
                 }
-            });
 
-            // Commit batch if we added operations
-            if (batchOps > 0) {
-                batch.commit().catch(err => {
-                    console.error('Combat batch commit failed', err);
-                    // On failure, clear lastSentCombat so we'll retry next flush
-                    lastSentCombatRef.current = null;
+                // 2) For each dirty troop check lastSentTroopsRef to avoid redundant writes
+                dirtyTroops.forEach((t) => {
+                    const key = t.uid;
+                    const last = lastSentTroopsRef.current.get(key);
+                    // compare relevant fields
+                    const snapshot = `${t.currentHp}|${t.actionGauge}|${t.battleKills}|${t.combatHitCount}|${t.combatAttackCount}|${t.inCombat}`;
+                    if (last !== snapshot) {
+                        const troopRef = doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', key);
+                        batch.update(troopRef, {
+                            currentHp: t.currentHp,
+                            actionGauge: t.actionGauge,
+                            battleKills: t.battleKills || 0,
+                            combatHitCount: t.combatHitCount || 0,
+                            combatAttackCount: t.combatAttackCount || 0,
+                            inCombat: t.inCombat || false
+                        });
+                        lastSentTroopsRef.current.set(key, snapshot);
+                        batchOps++;
+                    }
                 });
+
+                // Commit batch if we added operations
+                if (batchOps > 0) {
+                    batch.commit().then(() => {
+                        lastSaveTime = Date.now();
+                    }).catch(err => {
+                        console.error('Combat batch commit failed', err);
+                        // On failure, clear lastSentCombat so we'll retry next flush
+                        lastSentCombatRef.current = null;
+                    });
+                }
             }
 
             // End-of-battle handling:

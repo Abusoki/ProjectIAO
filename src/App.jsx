@@ -265,7 +265,7 @@ export default function App() {
 
         const heartbeat = setInterval(() => {
             updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), { lastOnline: Date.now() }).catch(() => { });
-        }, 15000);
+        }, 300000);
 
         return () => { unsubTroops(); unsubProfile(); unsubTavern(); unsubBattle(); clearInterval(heartbeat); };
     }, [user]);
