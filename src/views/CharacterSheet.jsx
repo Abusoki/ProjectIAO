@@ -3,6 +3,7 @@ import { ChevronRight, UserMinus, Heart, Sword, Shield, Zap, Utensils, Scroll, S
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { getEffectiveStats } from '../utils/mechanics';
+import { getUnitAvatar } from '../utils/avatarUtils';
 import { LEVEL_XP_CURVE, COOKING_XP_CURVE, SMITHING_XP_CURVE } from '../config/gameData';
 import ProgressBar from '../components/ui/ProgressBar';
 
@@ -146,32 +147,40 @@ export default function CharacterSheet({ user, unit, inventory, setView, appId }
 
             {/* Main Stats Card */}
             <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
-                <div className="p-4 bg-slate-900/50 border-b border-slate-700">
-                    <h2 className="text-2xl font-bold text-white">{nameOverrideUid === unit.uid && nameOverride ? nameOverride : unit.name}</h2>
-                    <p className="text-slate-400 text-sm">{unit.race} {unit.class}</p>
+                <div className="p-4 bg-slate-900/50 border-b border-slate-700 flex gap-4">
+                    <div className="shrink-0">
+                        <img src={getUnitAvatar(unit)} alt={unit.name} className="w-24 h-24 rounded-lg border border-slate-600 bg-slate-800 object-cover shadow-lg" />
+                        {unit.titles && unit.titles.includes('Bloblin') && (
+                            <div className="text-[10px] text-center mt-1 text-green-400 bg-green-900/50 rounded border border-green-800">Bloblin</div>
+                        )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <h2 className="text-2xl font-bold text-white truncate">{nameOverrideUid === unit.uid && nameOverride ? nameOverride : unit.name}</h2>
+                        <p className="text-slate-400 text-sm mb-2">{unit.race} {unit.class}</p>
 
-                    {/* XP Bars */}
-                    <div className="space-y-2 mt-4">
-                        <div>
-                            <div className="flex justify-between text-xs mb-1">
-                                <span className="text-amber-500 font-bold">Combat Lvl {unit.level}</span>
-                                <span className="text-slate-500">{unit.xp || 0} / {LEVEL_XP_CURVE[unit.level]} XP</span>
+                        {/* XP Bars */}
+                        <div className="space-y-1">
+                            <div>
+                                <div className="flex justify-between text-xs mb-0.5">
+                                    <span className="text-amber-500 font-bold">Combat Lvl {unit.level}</span>
+                                    <span className="text-slate-500">{unit.xp || 0} / {LEVEL_XP_CURVE[unit.level]} XP</span>
+                                </div>
+                                <ProgressBar current={unit.xp || 0} max={LEVEL_XP_CURVE[unit.level]} color="bg-amber-500" />
                             </div>
-                            <ProgressBar current={unit.xp || 0} max={LEVEL_XP_CURVE[unit.level]} color="bg-amber-500" />
-                        </div>
-                        <div>
-                            <div className="flex justify-between text-xs mb-1">
-                                <span className="text-orange-400 font-bold flex items-center gap-1"><Utensils size={10} /> Cooking Lvl {unit.cooking?.level || 1}</span>
-                                <span className="text-slate-500">{unit.cooking?.xp || 0} / {COOKING_XP_CURVE[unit.cooking?.level || 1]} XP</span>
+                            <div>
+                                <div className="flex justify-between text-xs mb-0.5">
+                                    <span className="text-orange-400 font-bold flex items-center gap-1"><Utensils size={10} /> Cooking Lvl {unit.cooking?.level || 1}</span>
+                                    <span className="text-slate-500">{unit.cooking?.xp || 0} / {COOKING_XP_CURVE[unit.cooking?.level || 1]} XP</span>
+                                </div>
+                                <ProgressBar current={unit.cooking?.xp || 0} max={COOKING_XP_CURVE[unit.cooking?.level || 1]} color="bg-orange-500" />
                             </div>
-                            <ProgressBar current={unit.cooking?.xp || 0} max={COOKING_XP_CURVE[unit.cooking?.level || 1]} color="bg-orange-500" />
-                        </div>
-                        <div>
-                            <div className="flex justify-between text-xs mb-1">
-                                <span className="text-slate-400 font-bold flex items-center gap-1"><Hammer size={10} /> Smithing Lvl {unit.smithing?.level || 1}</span>
-                                <span className="text-slate-500">{unit.smithing?.xp || 0} / {SMITHING_XP_CURVE[unit.smithing?.level || 1]} XP</span>
+                            <div>
+                                <div className="flex justify-between text-xs mb-0.5">
+                                    <span className="text-slate-400 font-bold flex items-center gap-1"><Hammer size={10} /> Smithing Lvl {unit.smithing?.level || 1}</span>
+                                    <span className="text-slate-500">{unit.smithing?.xp || 0} / {SMITHING_XP_CURVE[unit.smithing?.level || 1]} XP</span>
+                                </div>
+                                <ProgressBar current={unit.smithing?.xp || 0} max={SMITHING_XP_CURVE[unit.smithing?.level || 1]} color="bg-slate-500" />
                             </div>
-                            <ProgressBar current={unit.smithing?.xp || 0} max={SMITHING_XP_CURVE[unit.smithing?.level || 1]} color="bg-slate-500" />
                         </div>
                     </div>
                 </div>

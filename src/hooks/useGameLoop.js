@@ -128,6 +128,10 @@ export function useGameLoop(user, troops, inventory, gameState, profile, setTroo
 
             let workingInventory = [...currentInventory];
             let inventoryDirty = false;
+            let localTroops = [...currentTroops];
+            let shouldUpdateLocal = false;
+            let batch = writeBatch(db);
+            let writes = 0;
 
             for (const crafter of crafters) {
                 const idx = localTroops.findIndex(t => t.uid === crafter.uid);

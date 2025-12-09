@@ -1,6 +1,7 @@
 import React from 'react';
 import { Repeat, Gift } from 'lucide-react';
 import { getEffectiveStats } from '../utils/mechanics';
+import { getUnitAvatar } from '../utils/avatarUtils';
 import ProgressBar from '../components/ui/ProgressBar';
 import DamageOverlay from '../components/DamageOverlay';
 
@@ -44,9 +45,12 @@ export default function Combat({ troops, enemies, gameState, setGameState, setVi
                 <div className="space-y-2">
                     {troops.filter(t => t.inCombat || t.activity === 'fighting').map((u, idx) => (
                         <div key={idx} className={`p-2 rounded border border-slate-700 bg-slate-800 relative overflow-hidden transition-all duration-300`}>
-                            <div className="flex justify-between z-10 relative">
-                                <span className="font-bold text-sm truncate">{u.name}</span>
-                                <span className="text-xs">{u.currentHp}</span>
+                            <div className="flex justify-between z-10 relative items-center">
+                                <div className="flex items-center gap-2">
+                                    <img src={getUnitAvatar(u)} alt={u.name} className="w-8 h-8 rounded border border-slate-600 bg-slate-900 object-cover" />
+                                    <span className="font-bold text-sm truncate">{u.name}</span>
+                                </div>
+                                <span className="text-xs font-mono font-bold">{u.currentHp}</span>
                             </div>
 
                             {/* HP Bar */}
@@ -66,9 +70,12 @@ export default function Combat({ troops, enemies, gameState, setGameState, setVi
                 <div className="space-y-2">
                     {enemies.map((e, idx) => (
                         <div key={idx} className={`p-2 rounded border border-red-900/30 bg-red-900/10 text-right relative overflow-hidden`}>
-                            <div className="flex justify-between z-10 relative flex-row-reverse">
-                                <span className="font-bold text-sm text-red-300 truncate">{e.name}</span>
-                                <span className="text-xs text-red-400">{e.currentHp}</span>
+                            <div className="flex justify-between z-10 relative flex-row-reverse items-center">
+                                <div className="flex items-center gap-2 flex-row-reverse">
+                                    <img src={getUnitAvatar(e)} alt={e.name} className="w-8 h-8 rounded border border-red-800 bg-red-900/50 object-cover" />
+                                    <span className="font-bold text-sm text-red-300 truncate">{e.name}</span>
+                                </div>
+                                <span className="text-xs text-red-400 font-mono font-bold">{e.currentHp}</span>
                             </div>
 
                             {/* Enemy HP */}

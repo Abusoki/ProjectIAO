@@ -8,6 +8,8 @@ export default function ProfileEdit({ user, appId, setView, setProfileUid }) {
     const [displayName, setDisplayName] = useState('');
     const [bio, setBio] = useState('');
     const [avatar, setAvatar] = useState('');
+    const [title, setTitle] = useState('');
+    const [unlockedTitles, setUnlockedTitles] = useState([]);
 
     useEffect(() => {
         if (!user) return;
@@ -22,6 +24,8 @@ export default function ProfileEdit({ user, appId, setView, setProfileUid }) {
                 setDisplayName(data.displayName || '');
                 setBio(data.bio || '');
                 setAvatar(data.avatar || '');
+                setTitle(data.title || '');
+                setUnlockedTitles(data.unlockedTitles || []);
             } catch (e) {
                 console.error('Failed to load profile meta', e);
             } finally {
@@ -40,7 +44,12 @@ export default function ProfileEdit({ user, appId, setView, setProfileUid }) {
         setSaving(true);
         try {
             const ref = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'meta');
-            await setDoc(ref, { displayName: displayName.trim(), bio: bio.trim(), avatar: avatar.trim() }, { merge: true });
+            await setDoc(ref, {
+                displayName: displayName.trim(),
+                bio: bio.trim(),
+                avatar: avatar.trim(),
+                title: title
+            }, { merge: true });
             // After saving open the public profile view for this user
             if (typeof setProfileUid === 'function') setProfileUid(user.uid);
             setView('profile_public');
@@ -88,6 +97,22 @@ export default function ProfileEdit({ user, appId, setView, setProfileUid }) {
                     className="w-full bg-slate-900 p-2 rounded border border-slate-700"
                     placeholder="https://..."
                 />
+
+                {unlockedTitles.length > 0 && (
+                    <div className="space-y-2 pt-2 border-t border-slate-700">
+                        <label className="text-xs text-slate-400">Title</label>
+                        <select
+                            value={title}
+                            onChange={e => setTitle(e.target.value)}
+                            className="w-full bg-slate-900 p-2 rounded border border-slate-700 text-sm"
+                        >
+                            <option value="">(None)</option>
+                            {unlockedTitles.map(t => (
+                                <option key={t} value={t}>{t}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
 
                 <div className="flex gap-2 justify-end">
                     <button onClick={() => setView('profile_public')} className="px-3 py-2 bg-slate-700 rounded text-sm">Cancel</button>
