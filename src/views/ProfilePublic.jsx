@@ -64,17 +64,7 @@ export default function ProfilePublic({ profileUid, user, appId, setView, setPro
                             <Edit size={14} /> Edit
                         </button>
                     )}
-                    {!isMe && (
-                        <button
-                            onClick={() => {
-                                setActiveConversationUid(profileUid);
-                                setView('messages');
-                            }}
-                            className="px-3 py-1 bg-emerald-700 rounded text-xs flex items-center gap-2"
-                        >
-                            <MessageSquare size={14} /> Message
-                        </button>
-                    )}
+
                 </div>
             </div>
 
