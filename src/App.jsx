@@ -62,8 +62,8 @@ export default function App() {
     useEffect(() => { gameStateRef.current = gameState; }, [gameState]);
 
     const playerLevel = troops.reduce((acc, t) => acc + t.level, 0);
-    // Grant a 5th slot once total player level reaches 20.
-    const maxTroops = playerLevel >= 20 ? 5 : (playerLevel >= 10 ? 4 : 3);
+    // Grant a 5th slot once total player level reaches 20, 6th at 30.
+    const maxTroops = playerLevel >= 30 ? 6 : (playerLevel >= 20 ? 5 : (playerLevel >= 10 ? 4 : 3));
 
     // --- State Wrapper for Cleanup ---
     const handleGameStateChange = async (newState) => {
