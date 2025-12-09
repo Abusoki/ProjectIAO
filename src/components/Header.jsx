@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Shield, Backpack, LogOut, MoreVertical, Info, GitCommit } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../config/firebase';
+import { resetAllUsersCombat } from '../utils/devTools';
 
 export default function Header({ playerLevel, gold, inventoryCount, setView, userCount }) {
     const [showMenu, setShowMenu] = useState(false);
@@ -40,10 +41,17 @@ export default function Header({ playerLevel, gold, inventoryCount, setView, use
                             >
                                 <GitCommit size={16} /> Change Log
                             </button>
-                            <div className="border-t border-slate-700 my-1"></div>
+                            <div className="border-t border-slate-600 my-1"></div>
+                            <button
+                                onClick={() => { resetAllUsersCombat('iron-and-oil-web'); setShowMenu(false); }}
+                                className="w-full text-left px-4 py-2 hover:bg-slate-700 flex items-center gap-2 text-red-400"
+                            >
+                                <Shield size={16} /> Dev: Reset Combat
+                            </button>
+                            <div className="border-t border-slate-600 my-1"></div>
                             <button
                                 onClick={() => signOut(auth)}
-                                className="w-full text-left px-4 py-2 hover:bg-slate-700 flex items-center gap-2 text-red-400"
+                                className="w-full text-left px-4 py-2 hover:bg-slate-700 flex items-center gap-2 text-rose-400"
                             >
                                 <LogOut size={16} /> Sign Out
                             </button>
