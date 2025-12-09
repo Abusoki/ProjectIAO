@@ -346,7 +346,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                     log: combatLog.slice(-20)
                 };
                 // Fire-and-forget result log
-                setDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combatResults', resultId), resultDoc).catch(e => console.warn(e));
+                setDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'combatHistory', resultId), resultDoc).catch(e => console.warn(e));
             } catch (loggingErr) {
                 console.warn("Result logging failed", loggingErr);
             }
