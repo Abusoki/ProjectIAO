@@ -15,6 +15,12 @@ export const CLASSES = {
 };
 
 export const SKILLS = {
+    Human: {
+        row1: [
+            { id: 'rage', name: 'Rage', desc: 'Start of combat: Deal 5 damage to ALL enemies. Costs 10 HP.' },
+            { id: 'looter', name: 'Looter', desc: 'Start of combat: Stunned for 5s. Double drop rate.' }
+        ]
+    },
     Urblosh: {
         row1: [
             { id: 'oil_refined', name: 'Oil Refined', desc: 'Passive: Heal 5 HP every 5th hit dealt.' },
@@ -29,7 +35,7 @@ export const SKILLS = {
     }
 };
 
-// Centralized drop definitions — monsters and missions reference these by id.
+// Centralized drop definitions - monsters and missions reference these by id.
 // Add/adjust items here; easier to manage and localize drop metadata.
 export const DROPS = {
     rat_fur_cape: { id: 'rat_fur_cape', name: 'Rat Fur Cape', type: 'cape', desc: 'A cape made from rat fur.' },
@@ -63,7 +69,7 @@ export const MISSIONS = {
     rat_showdown: {
         name: "Rat Showdown",
         level: 2,
-        desc: "Face 2–3 aggressive rats. Small chance for a Rat Fur Cape.",
+        desc: "Face 2-3 aggressive rats. Small chance for a Rat Fur Cape.",
         enemyType: "rat",
         minParty: 1,
         maxParty: 2,
@@ -93,7 +99,7 @@ export const MISSIONS = {
     ice_cave: {
         name: "Ice Cave of the Southern Pond",
         level: 5,
-        desc: "Face 3–5 Ice Imps. Drops Ice Boots with +2 SPD, +1 DEF.",
+        desc: "Face 3-5 Ice Imps. Drops Ice Boots with +2 SPD, +1 DEF.",
         enemyType: "ice_imp",
         minParty: 1,
         maxParty: 4,
