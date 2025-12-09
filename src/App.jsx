@@ -24,27 +24,31 @@ import Jobs from './views/Jobs';
 import ProfilesSearch from './views/ProfilesSearch';
 import ProfilePublic from './views/ProfilePublic';
 import ProfileEdit from './views/ProfileEdit';
+import ProfilePublic from './views/ProfilePublic';
+import ProfileEdit from './views/ProfileEdit';
 import FriendsInbox from './views/FriendsInbox';
+import About from './views/About';
+import ChangeLog from './views/ChangeLog';
 
 const appId = 'iron-and-oil-web';
 
 export default function App() {
     const [user, setUser] = useState(null);
     const [profile, setProfile] = useState(null);
-    const [view, setView] = useState('barracks'); 
+    const [view, setView] = useState('barracks');
     const [troops, setTroops] = useState([]);
     const [inventory, setInventory] = useState([]);
     const [gold, setGold] = useState(0);
     const [tavernState, setTavernState] = useState({ recruits: [], nextRefresh: 0 });
     const [selectedUnitId, setSelectedUnitId] = useState(null);
     const [profileUid, setProfileUid] = useState(null);
-    
+
     // Combat State
     const [gameState, setGameState] = useState('idle');
     const [selectedTroops, setSelectedTroops] = useState([]);
     const [enemies, setEnemies] = useState([]);
     const [autoBattle, setAutoBattle] = useState(false);
-    
+
     // Auto-battle tracking
     const [lastMissionKey, setLastMissionKey] = useState(null);
 
@@ -68,8 +72,8 @@ export default function App() {
             const activeTroops = troopsRef.current.filter(t => t.inCombat);
             if (activeTroops.length > 0) {
                 activeTroops.forEach(t => {
-                    updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', t.uid), { 
-                        inCombat: false, actionGauge: 0 
+                    updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', t.uid), {
+                        inCombat: false, actionGauge: 0
                     }).catch(e => console.error("Cleanup error", e));
                 });
             }
@@ -80,7 +84,7 @@ export default function App() {
 
     // --- Hooks Logic ---
     useGameLoop(user, troops, inventory, gameState);
-    
+
     const { combatLog, setCombatLog, damageEvents } = useCombat(
         user, troops, enemies, gameState, handleGameStateChange, setEnemies, setView, selectedTroops, inventory, autoBattle, setAutoBattle
     );
@@ -89,7 +93,7 @@ export default function App() {
     const startCombat = async (missionKey) => {
         const currentTroops = troopsRef.current;
         let validSelectedIds = selectedTroops.filter(id => currentTroops.find(t => t.uid === id));
-        
+
         const mission = MISSIONS[missionKey];
         if (!mission) {
             console.error("Unknown mission key:", missionKey);
@@ -106,17 +110,17 @@ export default function App() {
             // Trim to allowed party size
             validSelectedIds = validSelectedIds.slice(0, mission.maxParty);
         }
-        
-        if (validSelectedIds.length === 0) { 
-            setAutoBattle(false); 
-            return; 
+
+        if (validSelectedIds.length === 0) {
+            setAutoBattle(false);
+            return;
         }
-        
+
         setLastMissionKey(missionKey);
 
         // 1. Mark troops as inCombat
-        const updates = validSelectedIds.map(uid => 
-            updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', uid), { 
+        const updates = validSelectedIds.map(uid =>
+            updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', uid), {
                 inCombat: true, actionGauge: 0, battleKills: 0, combatHitCount: 0, combatAttackCount: 0
             })
         );
@@ -131,22 +135,22 @@ export default function App() {
         const newEnemies = Array.from({ length: enemyCount }, (_, i) => {
             const mk = mission.enemyType;
             if (mk === 'golem') {
-                return { id: `golem_${i}`, name: `Rock Golem ${i+1}`, maxHp: 80, currentHp: 80, ap: 15, def: 5, spd: 4, actionGauge: Math.random() * 20 };
+                return { id: `golem_${i}`, name: `Rock Golem ${i + 1}`, maxHp: 80, currentHp: 80, ap: 15, def: 5, spd: 4, actionGauge: Math.random() * 20 };
             }
             if (mk === 'blob') {
-                return { id: `blob_${i}`, name: `Bloblin ${i+1}`, maxHp: 40, currentHp: 40, ap: 8, def: 0, spd: 8, actionGauge: Math.random() * 50 };
+                return { id: `blob_${i}`, name: `Bloblin ${i + 1}`, maxHp: 40, currentHp: 40, ap: 8, def: 0, spd: 8, actionGauge: Math.random() * 50 };
             }
             if (mk === 'rat') {
-                return { id: `rat_${i}`, name: `Giant Rat ${i+1}`, maxHp: 22, currentHp: 22, ap: 4, def: 0, spd: 10, actionGauge: Math.random() * 50 };
+                return { id: `rat_${i}`, name: `Giant Rat ${i + 1}`, maxHp: 22, currentHp: 22, ap: 4, def: 0, spd: 10, actionGauge: Math.random() * 50 };
             }
             if (mk === 'ice_imp') {
-                return { id: `ice_imp_${i}`, name: `Ice Imp ${i+1}`, maxHp: 50, currentHp: 50, ap: 10, def: 2, spd: 10, actionGauge: Math.random() * 40 };
+                return { id: `ice_imp_${i}`, name: `Ice Imp ${i + 1}`, maxHp: 50, currentHp: 50, ap: 10, def: 2, spd: 10, actionGauge: Math.random() * 40 };
             }
             if (mk === 'dummy') {
                 return { id: `dummy_0`, name: `Training Dummy`, maxHp: 100, currentHp: 100, ap: 1, def: 9999, spd: 0, actionGauge: 0 };
             }
             // fallback
-            return { id: `mob_${i}`, name: `Foe ${i+1}`, maxHp: 30, currentHp: 30, ap: 6, def: 0, spd: 8, actionGauge: Math.random() * 50 };
+            return { id: `mob_${i}`, name: `Foe ${i + 1}`, maxHp: 30, currentHp: 30, ap: 6, def: 0, spd: 8, actionGauge: Math.random() * 50 };
         });
 
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'system', 'combat'), {
@@ -163,9 +167,9 @@ export default function App() {
     // --- Auto Battle Trigger ---
     useEffect(() => {
         if (gameState === 'victory' && autoBattle && lastMissionKey) {
-            const timer = setTimeout(() => { 
+            const timer = setTimeout(() => {
                 if (view === 'combat' && autoBattle) {
-                    startCombat(lastMissionKey); 
+                    startCombat(lastMissionKey);
                 }
             }, 2500);
             return () => clearTimeout(timer);
@@ -196,9 +200,9 @@ export default function App() {
     // --- Listeners ---
     useEffect(() => {
         if (!user) return;
-        
+
         const unsubTroops = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'troops'), (snap) => {
-            if (gameStateRef.current === 'fighting') return; 
+            if (gameStateRef.current === 'fighting') return;
             const t = [];
             snap.forEach(doc => t.push({ ...doc.data(), uid: doc.id }));
             setTroops(t);
@@ -233,9 +237,9 @@ export default function App() {
                 setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'system', 'tavern'), { recruits: newRecruits, nextRefresh: Date.now() + TAVERN_REFRESH_MS });
             }
         });
-        
+
         const heartbeat = setInterval(() => {
-             updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), { lastOnline: Date.now() }).catch(()=>{});
+            updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), { lastOnline: Date.now() }).catch(() => { });
         }, 15000);
 
         return () => { unsubTroops(); unsubProfile(); unsubTavern(); unsubBattle(); clearInterval(heartbeat); };
@@ -300,6 +304,8 @@ export default function App() {
                 {view === 'friends_inbox' && <FriendsInbox user={user} appId={appId} setView={setView} setProfileUid={setProfileUid} />}
                 {view === 'profile_public' && profileUid && <ProfilePublic profileUid={profileUid} user={user} appId={appId} setView={setView} setProfileUid={setProfileUid} />}
                 {view === 'profile_edit' && <ProfileEdit user={user} appId={appId} setView={setView} setProfileUid={setProfileUid} />}
+                {view === 'about' && <About setView={setView} appId={appId} />}
+                {view === 'changelog' && <ChangeLog setView={setView} />}
             </main>
 
             <Navbar currentView={view} setView={setView} gameState={gameState} user={user} setProfileUid={setProfileUid} />
