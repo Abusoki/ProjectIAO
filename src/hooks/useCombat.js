@@ -1,8 +1,9 @@
+// Modified handleVictory to use centralized DROPS + ENEMY_DROPS tables
 import { useState, useEffect, useRef } from 'react';
 import { doc, updateDoc, setDoc, deleteDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { getEffectiveStats } from '../utils/mechanics';
-import { LEVEL_XP_CURVE } from '../config/gameData';
+import { LEVEL_XP_CURVE, DROPS, ENEMY_DROPS } from '../config/gameData';
 import { generateId } from '../utils/helpers';
 
 export function useCombat(user, troops, enemies, gameState, setGameState, setEnemies, setView, selectedTroops, inventory, autoBattle, setAutoBattle) {
@@ -10,15 +11,8 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
     const [damageEvents, setDamageEvents] = useState([]); 
     const processingResult = useRef(false);
     
-    // Fix: Keep a ref to inventory so we always have the latest version when battle ends
     const inventoryRef = useRef(inventory);
     useEffect(() => { inventoryRef.current = inventory; }, [inventory]);
-
-    // Local caches to reduce write volume
-    const lastSentTroopsRef = useRef(new Map()); // uid -> JSON snapshot of last sent fields
-    const lastSentCombatRef = useRef(null); // stringified enemies+active
-    const writeTickCounter = useRef(0);
-    const WRITE_INTERVAL_TICKS = 3; // only perform DB troop/combat writes every N internal ticks
 
     const addDamageEvent = (targetId, amount, type = 'damage') => {
         const id = Math.random();
@@ -244,7 +238,6 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
         setCombatLog(prev => [...prev, "VICTORY! Checking for loot..."]);
         const xpGain = 20;
         
-        // Use Ref to get latest inventory
         let newInv = [...inventoryRef.current];
         
         let dropChance = 0.1;
@@ -253,42 +246,28 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
 
         // Determine enemy type by id or name
         const leadEnemy = enemies[0];
-        const enemyType = leadEnemy?.id?.split('_')[0] || (leadEnemy?.name || '').toLowerCase();
+        const enemyType = (leadEnemy?.id || '').split('_')[0] || (leadEnemy?.name || '').toLowerCase();
 
-        if (enemyType.includes('golem') || enemyType.includes('golem')) {
+        // Use centralized ENEMY_DROPS mapping
+        const pool = ENEMY_DROPS[enemyType] || [];
+        for (const dropRef of pool) {
+            try {
+                if (Math.random() < (dropRef.chance || 0)) {
+                    const def = DROPS[dropRef.id];
+                    if (!def) continue;
+                    newInv.push({ id: generateId(), ...def });
+                    setCombatLog(prev => [...prev, `+ ${def.name}`]);
+                }
+            } catch (e) { console.error('Drop roll failed', e); }
+        }
+
+        // As a fallback for old enemyType cases (if no pool found) keep a generic small chance for resources
+        if (pool.length === 0) {
             if (Math.random() < dropChance) {
-                newInv.push({ id: generateId(), name: "Iron Ore", type: 'resource' });
-                setCombatLog(prev => [...prev, "+ Iron Ore"]);
+                const def = DROPS.slime_paste || { id: generateId(), name: 'Slime Paste', type: 'resource', desc: 'Sticky.' };
+                newInv.push({ id: generateId(), ...def });
+                setCombatLog(prev => [...prev, `+ ${def.name}`]);
             }
-            if (Math.random() < 0.2) {
-                newInv.push({ id: generateId(), name: "Iron Ore", type: 'resource' });
-                setCombatLog(prev => [...prev, "+ Iron Ore"]);
-            }
-        } else if (enemyType.includes('rat')) {
-            // Rat drops
-            if (Math.random() < 0.15) {
-                newInv.push({ id: generateId(), name: "Rat Fur Cape", type: 'cape', desc: "A cape made from rat fur." });
-                setCombatLog(prev => [...prev, "+ Rat Fur Cape"]);
-            }
-        } else if (enemyType.includes('ice_imp') || enemyType.includes('ice')) {
-            // Ice Imp drops
-            if (Math.random() < 0.12) {
-                newInv.push({ id: generateId(), name: "Ice Boots", type: 'boots', stats: { spd: 2, def: 1 }, desc: "Boots of cold speed." });
-                setCombatLog(prev => [...prev, "+ Ice Boots"]);
-            }
-        } else {
-             if (Math.random() < dropChance) {
-                 newInv.push({ id: generateId(), name: "Slime Paste", type: 'resource', desc: "Sticky." });
-                 setCombatLog(prev => [...prev, "+ Slime Paste"]);
-             }
-             if (Math.random() < 0.05) {
-                 newInv.push({ id: generateId(), name: "Slimey Gloves", type: 'gloves', stats: { def: 1 }, desc: "Cooking + Combat Bonus" });
-                 setCombatLog(prev => [...prev, "+ Slimey Gloves!"]);
-             }
-             if (Math.random() < 0.3) {
-                 newInv.push({ id: generateId(), name: "Dull Sword", type: 'weapon', stats: { ap: 2, maxHp: -5 } });
-                 setCombatLog(prev => [...prev, "+ Dull Sword"]);
-             }
         }
 
         // Batch survivors updates to minimize writes
@@ -312,7 +291,6 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                     batch.update(ref, { xp: newXp, level: newLevel, lore: newLore, inCombat: false, actionGauge: 0 });
                 }
             });
-            // update profile data and combat doc
             const profileRef = doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'profile', 'data');
             batch.update(profileRef, { gold: (user.gold || 0) + 15, inventory: newInv });
             const combatRef = doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combat');
@@ -320,7 +298,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             await batch.commit();
         } catch (e) {
             console.error('Batched victory commit failed', e);
-            // fallback to individual updates (best-effort)
+            // fallback logic kept as before...
             const updates = survivors.map(async (unit) => {
                 if (unit.currentHp <= 0) {
                     return deleteDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', unit.uid));
@@ -362,7 +340,6 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combat'), { active: false }).catch(()=>{});
             await Promise.all(party.map(u => deleteDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', u.uid))));
         }
-        // Final safety cleanup for any remaining troop docs
         await cleanupInCombatFlags();
     };
 

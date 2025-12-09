@@ -5,7 +5,8 @@ import { MessageSquare, Edit } from 'lucide-react';
 
 export default function ProfilePublic({ profileUid, user, appId, setView, setProfileUid }) {
   const [profile, setProfile] = useState(null);
-  const [troops, setTroops] = useState([]);
+  const [troopsPreview, setTroopsPreview] = useState([]); // top N for preview
+  const [totalMissions, setTotalMissions] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,12 +21,20 @@ export default function ProfilePublic({ profileUid, user, appId, setView, setPro
         const troopsRef = collection(db, 'artifacts', appId, 'users', profileUid, 'troops');
         const q = query(troopsRef, orderBy('level', 'desc'));
         const snap = await getDocs(q);
-        const arr = [];
-        snap.forEach(d => arr.push({ uid: d.id, ...d.data() }));
-        setTroops(arr.slice(0, 6));
+        const all = [];
+        snap.forEach(d => all.push({ uid: d.id, ...d.data() }));
+
+        // preview top 6
+        setTroopsPreview(all.slice(0, 6));
+
+        // total missions completed across all troops
+        const total = all.reduce((acc, t) => acc + (t.lore?.missionsWon || 0), 0);
+        setTotalMissions(total);
       } catch (e) {
         console.error('Failed loading profile', e);
         setProfile({ displayName: '(Unknown)' });
+        setTroopsPreview([]);
+        setTotalMissions(0);
       } finally {
         setLoading(false);
       }
@@ -43,6 +52,7 @@ export default function ProfilePublic({ profileUid, user, appId, setView, setPro
         <div>
           <h2 className="text-xl font-bold">{profile.displayName || '(Unnamed)'}</h2>
           <div className="text-xs text-slate-400">{profile.bio || ''}</div>
+          <div className="text-xs text-slate-500 mt-1">Total Missions Completed: <span className="font-semibold text-amber-400">{totalMissions}</span></div>
         </div>
         <div className="flex gap-2">
           {isMe && (
@@ -56,12 +66,23 @@ export default function ProfilePublic({ profileUid, user, appId, setView, setPro
 
       <div>
         <h3 className="text-sm text-slate-300 mb-2">Roster Preview</h3>
-        {troops.length === 0 ? <div className="text-sm text-slate-500 italic">No units.</div> : (
+        {troopsPreview.length === 0 ? <div className="text-sm text-slate-500 italic">No units.</div> : (
           <div className="grid grid-cols-2 gap-2">
-            {troops.map(t => (
-              <div key={t.uid} className="bg-slate-800 p-2 rounded border border-slate-700">
-                <div className="font-bold">{t.name}</div>
-                <div className="text-xs text-slate-400">Lvl {t.level}</div>
+            {troopsPreview.map(t => (
+              <div key={t.uid} className="bg-slate-800 p-3 rounded border border-slate-700">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="font-bold">{t.name}</div>
+                    <div className="text-xs text-slate-400">Lvl {t.level} • {t.race} {t.class}</div>
+                    <div className="text-[11px] text-slate-400 mt-2">Kills: <span className="font-semibold">{t.lore?.kills || 0}</span></div>
+                    <div className="text-[11px] text-slate-400">Missions: <span className="font-semibold">{t.lore?.missionsWon || 0}</span></div>
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    {/* quick stats block */}
+                    <div className="text-right">HP: {t.currentHp}/{t.baseStats?.maxHp || '—'}</div>
+                    <div className="text-right mt-2">{t.equipment ? Object.keys(t.equipment).length : 0} gear</div>
+                  </div>
+                </div>
               </div>
             ))}
           </div>

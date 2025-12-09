@@ -1,10 +1,10 @@
 import React from 'react';
 import { User, GraduationCap, ChefHat, Sword, Hammer, Package, Users, Inbox } from 'lucide-react';
 
-export default function Navbar({ currentView, setView, gameState }) {
-    const NavBtn = ({ view, icon: Icon, label, color }) => (
+export default function Navbar({ currentView, setView, gameState, user, setProfileUid }) {
+    const NavBtn = ({ view, icon: Icon, label, color, onClick }) => (
         <button
-            onClick={() => setView(view)}
+            onClick={onClick || (() => setView(view))}
             className={`p-2 rounded flex flex-col items-center gap-1 text-xs ${currentView === view ? color : 'text-slate-500'}`}
         >
             <Icon size={20} /> {label}
@@ -17,11 +17,29 @@ export default function Navbar({ currentView, setView, gameState }) {
             <NavBtn view="inventory" icon={Package} label="Bag" color="text-blue-400" />
             <NavBtn view="skills" icon={GraduationCap} label="Skills" color="text-purple-500" />
             <NavBtn view="jobs" icon={ChefHat} label="Jobs" color="text-orange-500" />
+            <NavBtn view="kitchen" icon={ChefHat} label="Kitchen" color="text-amber-500" />
+            <NavBtn view="smithing" icon={Hammer} label="Smith" color="text-gray-400" />
 
             {/* Social group */}
             <NavBtn view="profiles_search" icon={Users} label="Social" color="text-green-400" />
             <NavBtn view="friends_inbox" icon={Inbox} label="Inbox" color="text-emerald-400" />
-            <NavBtn view="profile_edit" icon={User} label="Profile" color="text-amber-400" />
+
+            {/* Profile: open public profile view for current user (not edit) */}
+            <NavBtn
+                view="profile_public"
+                icon={User}
+                label="Profile"
+                color="text-amber-400"
+                onClick={() => {
+                    if (user?.uid) {
+                        setProfileUid(user.uid);
+                        setView('profile_public');
+                    } else {
+                        // fallback to social page if not signed-in
+                        setView('profiles_search');
+                    }
+                }}
+            />
 
             <button
                 onClick={() => setView(gameState === 'fighting' ? 'combat' : 'mission_select')}

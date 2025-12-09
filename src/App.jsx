@@ -301,7 +301,7 @@ export default function App() {
                 {view === 'profile_edit' && <ProfileEdit user={user} appId={appId} setView={setView} setProfileUid={setProfileUid} />}
             </main>
 
-            <Navbar currentView={view} setView={setView} gameState={gameState} />
+            <Navbar currentView={view} setView={setView} gameState={gameState} user={user} setProfileUid={setProfileUid} />
         </div>
     );
 }

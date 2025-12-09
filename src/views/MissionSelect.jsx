@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ChevronRight, AlertTriangle, Mountain, Zap } from 'lucide-react';
 import { MISSIONS } from '../config/gameData';
 
 export default function MissionSelect({ troops, selectedTroops, setSelectedTroops, setView, startMission }) {
-    // allow selection up to 4 here (missions support up to 4)
     const MAX_SELECT = 4;
+
+    const [openCategory, setOpenCategory] = useState(1); // which category panel is open (1..4)
 
     const toggleSelect = (t) => {
         const isSelected = selectedTroops.includes(t.uid);
@@ -17,12 +18,18 @@ export default function MissionSelect({ troops, selectedTroops, setSelectedTroop
 
     const missions = Object.entries(MISSIONS).map(([key, m]) => ({ key, ...m }));
 
-    const missionsForSize = (size) => missions.filter(m => (m.minParty || 1) <= size && (m.maxParty || 1) >= size);
+    // CATEGORY RULE: missions are grouped by their "maxParty".
+    // A mission with maxParty == N appears in the N-person category.
+    const missionsForMax = (size) => missions.filter(m => (m.maxParty || 1) === size);
 
+    // UI card for each mission
     const renderMissionCard = (m) => {
-        const canStart = selectedTroops.length >= (m.minParty || 1) && selectedTroops.length <= (m.maxParty || 4);
-        const btnLabel = canStart ? 'Go' : `Requires ${m.minParty} slot${m.minParty > 1 ? 's' : ''}`;
+        // can start when at least one character selected and selected count <= mission max
+        const canStart = selectedTroops.length > 0 && selectedTroops.length <= (m.maxParty || 1);
+        const tooMany = selectedTroops.length > (m.maxParty || 1);
+        const btnLabel = canStart ? 'Go' : (selectedTroops.length === 0 ? `Select up to ${m.maxParty}` : `Too many selected`);
         const note = m.noXp ? 'No XP' : `Lvl ${m.level} • ${m.desc}`;
+
         return (
             <div key={m.key} className="bg-slate-800 p-4 rounded-lg border border-slate-700 flex justify-between items-center">
                 <div>
@@ -33,7 +40,7 @@ export default function MissionSelect({ troops, selectedTroops, setSelectedTroop
                         <span className="text-slate-200">{m.name}</span>
                     </div>
                     <div className="text-xs text-slate-400 mt-1">{note}</div>
-                    <div className="text-[11px] text-slate-500 mt-2">Party: {m.minParty}-{m.maxParty} • Spawns: {m.spawnMin || 1}{m.spawnMax ? `–${m.spawnMax}` : ''}</div>
+                    <div className="text-[11px] text-slate-500 mt-2">Allowed: up to {m.maxParty} • Spawns: {m.spawnMin || 1}{m.spawnMax ? `–${m.spawnMax}` : ''}</div>
                     {m.drops && m.drops.length > 0 && (
                         <div className="text-[11px] text-slate-400 mt-1">Possible drops: {m.drops.map(d => d.name).join(', ')}</div>
                     )}
@@ -46,9 +53,53 @@ export default function MissionSelect({ troops, selectedTroops, setSelectedTroop
                     >
                         {btnLabel}
                     </button>
-                    {!canStart && <div className="text-[11px] text-slate-500">Selected: {selectedTroops.length}</div>}
+                    {!canStart && selectedTroops.length > 0 && (
+                        <div className="text-[11px] text-slate-500">{tooMany ? `Reduce to ${m.maxParty}` : `Selected: ${selectedTroops.length}`}</div>
+                    )}
                 </div>
             </div>
+        );
+    };
+
+    // small squad selector UI (allow up to MAX_SELECT)
+    const SquadList = () => (
+        <div className="grid gap-2 mb-6">
+            {troops.map(t => {
+                const isSelected = selectedTroops.includes(t.uid);
+                const busy = t.activity === 'cooking' || t.activity === 'smithing' || t.inCombat;
+                return (
+                    <button
+                        key={t.uid}
+                        disabled={busy}
+                        onClick={() => toggleSelect(t)}
+                        className={`p-3 rounded-lg border flex justify-between items-center ${isSelected ? 'bg-amber-900/40 border-amber-600' : 'bg-slate-800 border-slate-700'} ${busy ? 'opacity-50' : ''}`}
+                    >
+                        <div className="text-left">
+                            <div className="font-bold">{t.name}</div>
+                            <div className="text-xs text-slate-500">{busy ? 'Busy' : `${t.race} ${t.class}`}</div>
+                        </div>
+                        {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
+                    </button>
+                );
+            })}
+        </div>
+    );
+
+    // Category header component
+    const CategoryHeader = ({ size }) => {
+        const missionsCount = missionsForMax(size).length;
+        const open = openCategory === size;
+        return (
+            <button
+                onClick={() => setOpenCategory(open ? null : size)}
+                className="w-full flex justify-between items-center p-3 bg-slate-900 rounded border border-slate-700 hover:border-amber-500"
+            >
+                <div className="text-left">
+                    <div className="font-semibold">{size === 1 ? 'Solo (1)' : `${size} Characters`}</div>
+                    <div className="text-xs text-slate-400">Up to {size} characters — {missionsCount} mission{missionsCount !== 1 ? 's' : ''}</div>
+                </div>
+                <div className="text-xs text-slate-400">{open ? 'Hide' : 'Show'}</div>
+            </button>
         );
     };
 
@@ -62,61 +113,23 @@ export default function MissionSelect({ troops, selectedTroops, setSelectedTroop
                 <div className="ml-auto text-xs text-slate-400">Select up to {MAX_SELECT} units</div>
             </div>
 
-            {/* Squad Select */}
-            <div className="grid gap-2 mb-6">
-                {troops.map(t => {
-                    const isSelected = selectedTroops.includes(t.uid);
-                    const busy = t.activity === 'cooking' || t.activity === 'smithing' || t.inCombat;
-                    return (
-                        <button
-                            key={t.uid}
-                            disabled={busy}
-                            onClick={() => toggleSelect(t)}
-                            className={`p-3 rounded-lg border flex justify-between items-center ${isSelected ? 'bg-amber-900/40 border-amber-600' : 'bg-slate-800 border-slate-700'} ${busy ? 'opacity-50' : ''}`}
-                        >
-                            <div className="text-left">
-                                <div className="font-bold">{t.name}</div>
-                                <div className="text-xs text-slate-500">{busy ? 'Busy' : `${t.race} ${t.class}`}</div>
-                            </div>
-                            {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
-                        </button>
-                    );
-                })}
-            </div>
+            <SquadList />
 
-            {/* Mission Groups */}
             <div className="space-y-3">
-                {/* Solo (1) */}
-                <div>
-                    <div className="text-sm font-semibold mb-2">Solo (1)</div>
-                    <div className="grid gap-2">
-                        {missionsForSize(1).map(renderMissionCard)}
+                {[1,2,3,4].map(size => (
+                    <div key={size} className="space-y-2">
+                        <CategoryHeader size={size} />
+                        {openCategory === size && (
+                            <div className="grid gap-2">
+                                {missionsForMax(size).length === 0 ? (
+                                    <div className="text-sm text-slate-500 p-3 bg-slate-800 rounded border border-slate-700">No missions in this category.</div>
+                                ) : (
+                                    missionsForMax(size).map(renderMissionCard)
+                                )}
+                            </div>
+                        )}
                     </div>
-                </div>
-
-                {/* Duo (2) */}
-                <div>
-                    <div className="text-sm font-semibold mb-2">Two Characters (2)</div>
-                    <div className="grid gap-2">
-                        {missionsForSize(2).map(renderMissionCard)}
-                    </div>
-                </div>
-
-                {/* Trio (3) */}
-                <div>
-                    <div className="text-sm font-semibold mb-2">Three Characters (3)</div>
-                    <div className="grid gap-2">
-                        {missionsForSize(3).map(renderMissionCard)}
-                    </div>
-                </div>
-
-                {/* Four (4) */}
-                <div>
-                    <div className="text-sm font-semibold mb-2">Four Characters (4)</div>
-                    <div className="grid gap-2">
-                        {missionsForSize(4).map(renderMissionCard)}
-                    </div>
-                </div>
+                ))}
             </div>
         </div>
     );

@@ -29,7 +29,26 @@ export const SKILLS = {
     }
 };
 
-// New mission definitions grouped by allowed party size
+// Centralized drop definitions — monsters and missions reference these by id.
+// Add/adjust items here; easier to manage and localize drop metadata.
+export const DROPS = {
+    rat_fur_cape: { id: 'rat_fur_cape', name: 'Rat Fur Cape', type: 'cape', desc: 'A cape made from rat fur.' },
+    ice_boots: { id: 'ice_boots', name: 'Ice Boots', type: 'boots', stats: { spd: 2, def: 1 }, desc: 'Boots of chilled agility.' },
+    slime_paste: { id: 'slime_paste', name: 'Slime Paste', type: 'resource', desc: 'Sticky.' },
+    iron_ore: { id: 'iron_ore', name: 'Iron Ore', type: 'resource', desc: 'Raw ore for smithing.' },
+    slimey_gloves: { id: 'slimey_gloves', name: 'Slimey Gloves', type: 'gloves', stats: { def: 1 }, desc: 'Cooking + Combat Bonus' },
+    dull_sword: { id: 'dull_sword', name: 'Dull Sword', type: 'weapon', stats: { ap: 2, maxHp: -5 }, desc: 'Rusty weapon.' }
+};
+
+// Map enemy types to drop pools (drop id + chance)
+export const ENEMY_DROPS = {
+    rat: [{ id: 'rat_fur_cape', chance: 0.15 }],
+    ice_imp: [{ id: 'ice_boots', chance: 0.12 }],
+    golem: [{ id: 'iron_ore', chance: 0.1 }, { id: 'iron_ore', chance: 0.2 }],
+    blob: [{ id: 'slime_paste', chance: 0.1 }, { id: 'slimey_gloves', chance: 0.05 }, { id: 'dull_sword', chance: 0.3 }]
+};
+
+// New mission definitions grouped by allowed party size — reference drop ids where applicable
 export const MISSIONS = {
     // 1-character content
     training_dummy: {
@@ -54,10 +73,7 @@ export const MISSIONS = {
         minParty: 2,
         maxParty: 2,
         spawnMin: 2,
-        spawnMax: 3,
-        drops: [
-            { id: 'rat_fur_cape', name: 'Rat Fur Cape', type: 'cape', chance: 0.15, desc: 'Light cape made from rat fur.' }
-        ]
+        spawnMax: 3
     },
 
     // 3-character content (existing zones)
@@ -69,10 +85,7 @@ export const MISSIONS = {
         minParty: 3,
         maxParty: 3,
         spawnMin: 1,
-        spawnMax: 4,
-        drops: [
-            { id: 'slime_paste', name: 'Slime Paste', type: 'resource', chance: 0.1 }
-        ]
+        spawnMax: 4
     },
     mines: {
         name: "Iron Mines",
@@ -82,10 +95,7 @@ export const MISSIONS = {
         minParty: 3,
         maxParty: 3,
         spawnMin: 1,
-        spawnMax: 4,
-        drops: [
-            { id: 'iron_ore', name: 'Iron Ore', type: 'resource', chance: 0.1 }
-        ]
+        spawnMax: 4
     },
 
     // 4-character content
@@ -97,10 +107,7 @@ export const MISSIONS = {
         minParty: 4,
         maxParty: 4,
         spawnMin: 3,
-        spawnMax: 5,
-        drops: [
-            { id: 'ice_boots', name: 'Ice Boots', type: 'boots', chance: 0.12, stats: { spd: 2, def: 1 }, desc: 'Boots of chilled agility.' }
-        ]
+        spawnMax: 5
     }
 };
 
@@ -118,7 +125,6 @@ export const LEVEL_XP_CURVE = [0, 100, 250, 500, 1000, 2000, 4000, 8000, 15000, 
 // Define one standard curve for skills
 export const SKILL_XP_CURVE = [0, 50, 150, 300, 600, 1200, 2500, 5000, 10000, 99999];
 
-// Export aliases to satisfy imports in different files
 export const COOKING_XP_CURVE = SKILL_XP_CURVE;
 export const SMITHING_XP_CURVE = SKILL_XP_CURVE;
 

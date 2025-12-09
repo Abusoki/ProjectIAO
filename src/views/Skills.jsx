@@ -4,6 +4,33 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { SKILLS } from '../config/gameData';
 
+const SKILL_ASSET_PATH = '/assets/skills'; // drop PNGs here named like `${id}.png`
+
+function SkillIcon({ id, name, size = 48 }) {
+    const imgSrc = `${SKILL_ASSET_PATH}/${id}.png`;
+    const initials = (name || '').split(' ').map(s => s[0]).join('').slice(0, 2).toUpperCase();
+
+    return (
+        <div
+            className="flex-shrink-0 rounded-md overflow-hidden bg-slate-700 border border-slate-600"
+            style={{ width: size, height: size, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+            <img
+                src={imgSrc}
+                alt={name}
+                onError={(e) => {
+                    // hide broken image so fallback initials are visible
+                    e.currentTarget.style.display = 'none';
+                }}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
+            <div className="text-xs text-slate-300 font-bold select-none" aria-hidden style={{ position: 'absolute' }}>
+                {initials}
+            </div>
+        </div>
+    );
+}
+
 export default function Skills({ troops, user, appId }) {
     const [savingFor, setSavingFor] = useState(null);
     const [selectedUnitId, setSelectedUnitId] = useState(null);
@@ -137,10 +164,14 @@ export default function Skills({ troops, user, appId }) {
                                         const disabledOtherSelected = current && current !== option.id;
                                         return (
                                             <div key={option.id} className="flex-1 bg-slate-900 p-3 rounded border border-slate-700 flex flex-col justify-between">
-                                                <div>
-                                                    <div className="font-semibold">{option.name}</div>
-                                                    <div className="text-[11px] text-slate-400 mt-1">{option.desc}</div>
+                                                <div className="flex items-start gap-3">
+                                                    <SkillIcon id={option.id} name={option.name} />
+                                                    <div>
+                                                        <div className="font-semibold">{option.name}</div>
+                                                        <div className="text-[11px] text-slate-400 mt-1">{option.desc}</div>
+                                                    </div>
                                                 </div>
+
                                                 <div className="mt-3 flex gap-2">
                                                     <button
                                                         onClick={() => applySkill(selectedUnit, option.id)}
@@ -167,18 +198,24 @@ export default function Skills({ troops, user, appId }) {
                                     {(!SKILLS?.[selectedUnit.race]?.row1 || SKILLS[selectedUnit.race].row1.length === 0) && (
                                         <>
                                             <div className="flex-1 bg-slate-900 p-3 rounded border border-slate-700 flex flex-col justify-between">
-                                                <div>
-                                                    <div className="font-semibold">Trait A</div>
-                                                    <div className="text-[11px] text-slate-400 mt-1">Placeholder</div>
+                                                <div className="flex items-start gap-3">
+                                                    <SkillIcon id="placeholder_a" name="Trait A" />
+                                                    <div>
+                                                        <div className="font-semibold">Trait A</div>
+                                                        <div className="text-[11px] text-slate-400 mt-1">Placeholder</div>
+                                                    </div>
                                                 </div>
                                                 <div className="mt-3">
                                                     <button className="w-full px-2 py-1 rounded text-xs bg-slate-700 text-slate-400 cursor-not-allowed">Locked</button>
                                                 </div>
                                             </div>
                                             <div className="flex-1 bg-slate-900 p-3 rounded border border-slate-700 flex flex-col justify-between">
-                                                <div>
-                                                    <div className="font-semibold">Trait B</div>
-                                                    <div className="text-[11px] text-slate-400 mt-1">Placeholder</div>
+                                                <div className="flex items-start gap-3">
+                                                    <SkillIcon id="placeholder_b" name="Trait B" />
+                                                    <div>
+                                                        <div className="font-semibold">Trait B</div>
+                                                        <div className="text-[11px] text-slate-400 mt-1">Placeholder</div>
+                                                    </div>
                                                 </div>
                                                 <div className="mt-3">
                                                     <button className="w-full px-2 py-1 rounded text-xs bg-slate-700 text-slate-400 cursor-not-allowed">Locked</button>
@@ -193,9 +230,12 @@ export default function Skills({ troops, user, appId }) {
                             <div className="grid gap-2">
                                 {buildRacePlaceholders(selectedUnit).map(node => (
                                     <div key={node.id} className="flex items-center justify-between bg-slate-900 p-2 rounded border border-slate-700">
-                                        <div>
-                                            <div className="font-semibold text-sm">{node.name}</div>
-                                            <div className="text-[11px] text-slate-400">{node.desc}</div>
+                                        <div className="flex items-center gap-3">
+                                            <SkillIcon id={node.id} name={node.name} size={40} />
+                                            <div>
+                                                <div className="font-semibold text-sm">{node.name}</div>
+                                                <div className="text-[11px] text-slate-400">{node.desc}</div>
+                                            </div>
                                         </div>
                                         <div>
                                             <button className="px-2 py-1 rounded text-xs bg-slate-700 text-slate-400 cursor-not-allowed" title="Placeholder">Locked</button>
@@ -215,9 +255,12 @@ export default function Skills({ troops, user, appId }) {
                             <div className="grid gap-2">
                                 {buildClassTree(selectedUnit).map(node => (
                                     <div key={node.id} className="flex items-center justify-between bg-slate-900 p-2 rounded border border-slate-700">
-                                        <div>
-                                            <div className="font-semibold text-sm">{node.name}</div>
-                                            <div className="text-[11px] text-slate-400">{node.desc}</div>
+                                        <div className="flex items-center gap-3">
+                                            <SkillIcon id={node.id} name={node.name} size={40} />
+                                            <div>
+                                                <div className="font-semibold text-sm">{node.name}</div>
+                                                <div className="text-[11px] text-slate-400">{node.desc}</div>
+                                            </div>
                                         </div>
                                         <div>
                                             <button className="px-2 py-1 rounded text-xs bg-slate-700 text-slate-400 cursor-not-allowed" title="Placeholder">Locked</button>
