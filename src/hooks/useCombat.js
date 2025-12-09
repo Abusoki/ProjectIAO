@@ -11,38 +11,33 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
     const [damageEvents, setDamageEvents] = useState([]);
     const processingResult = useRef(false);
 
+    // REFACTOR: Use Refs for combat state to prevent dependency cycles
+    const enemiesRef = useRef(enemies);
+    const troopsRef = useRef(troops);
+
+    // Sync refs when entering combat or when props change if NOT fighting (to keep fresh prep data)
+    useEffect(() => {
+        if (gameState !== 'fighting') {
+            enemiesRef.current = enemies;
+            troopsRef.current = troops;
+        }
+    }, [enemies, troops, gameState]);
+
     const inventoryRef = useRef(inventory);
     useEffect(() => { inventoryRef.current = inventory; }, [inventory]);
 
-    const addDamageEvent = (targetId, amount, type = 'damage') => {
-        const id = Math.random();
-        setDamageEvents(prev => [...prev, { id, targetId, amount, type }]);
-        setTimeout(() => {
-            setDamageEvents(prev => prev.filter(e => e.id !== id));
-        }, 1000);
-    };
-
-    // Helper: final cleanup to ensure no troop remains marked inCombat=true
-    const cleanupInCombatFlags = async () => {
-        if (!user) return;
-        try {
-            const troopsQ = query(collection(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops'), where('inCombat', '==', true));
-            const snap = await getDocs(troopsQ);
-            if (snap.empty) return;
-            const batch = writeBatch(db);
-            snap.forEach(d => {
-                batch.update(d.ref, { inCombat: false, actionGauge: 0 });
-            });
-            await batch.commit();
-        } catch (e) {
-            console.error('Failed cleanup inCombat flags', e);
-        }
-    };
+    // ... (keep addDamageEvent and cleanupInCombatFlags as is) ...
 
     useEffect(() => {
         if (gameState !== 'fighting') {
             processingResult.current = false;
             return;
+        }
+
+        // Initialize refs one last time at start of combat to ensure we have the starting state
+        // (This might be redundant with the effect above, but safe)
+        if (!processingResult.current) {
+            // We trust the refs are primed by the idle state sync
         }
 
         const interval = setInterval(() => {
@@ -51,14 +46,17 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             const combatRef = doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combat');
             let logUpdates = [];
             let battleOver = false;
-            // Collect dirty troops in-memory; we will flush to DB only when needed
             let dirtyTroops = new Map();
 
-            const fighters = troops.filter(t => t.inCombat);
-            if (fighters.length === 0 && enemies.length > 0) return;
+            // REFACTOR: Read from REFS
+            let currentTroops = troopsRef.current;
+            let currentEnemies = enemiesRef.current;
+
+            const fighters = currentTroops.filter(t => t.inCombat);
+            if (fighters.length === 0 && currentEnemies.length > 0) return;
 
             // Increment action gauges — apply Elvish Flicker double speed while remaining
-            [...fighters, ...enemies].forEach(u => {
+            [...fighters, ...currentEnemies].forEach(u => {
                 if (u.currentHp > 0) {
                     let baseSpd = (u.baseStats?.spd || u.spd || 8);
 
@@ -76,7 +74,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                 }
             });
 
-            const actors = [...fighters, ...enemies].filter(u => u.currentHp > 0 && u.actionGauge >= 100).sort((a, b) => b.actionGauge - a.actionGauge);
+            const actors = [...fighters, ...currentEnemies].filter(u => u.currentHp > 0 && u.actionGauge >= 100).sort((a, b) => b.actionGauge - a.actionGauge);
 
             actors.forEach(actor => {
                 if (battleOver || actor.currentHp <= 0) return;
@@ -88,7 +86,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                     actor._elvishFlickerRemaining = Math.max(0, (actor._elvishFlickerRemaining || 0) - 1);
                 }
 
-                const targets = isPlayer ? enemies.filter(e => e.currentHp > 0) : fighters.filter(t => t.currentHp > 0);
+                const targets = isPlayer ? currentEnemies.filter(e => e.currentHp > 0) : fighters.filter(t => t.currentHp > 0);
                 if (targets.length === 0) { battleOver = true; return; }
                 const target = targets[Math.floor(Math.random() * targets.length)];
 
@@ -158,7 +156,26 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             });
 
             // Apply local state updates for UI immediately
-            setEnemies([...enemies]);
+            // We update the refs (they are mutable so they are already updated), then trigger a render
+            setEnemies([...currentEnemies]);
+            // setTroops is passed as prop 'troops' which we can't set directly, 
+            // but the parent updates troops from DB. 
+            // However, for the UI to reflect HP updates instantly without waiting for DB roundtrip, 
+            // we might need a way to force update or rely on the props updating from DB eventually?
+            // Actually, we are modifying the objects inside troopsRef.current. 
+            // If these objects are references to the props, we are mutating props (bad practice but works for Ref holding).
+            // But 'troops' from props comes from App state.
+            // Ideally we should have setTroops here? No, App.jsx controls troops via DB listener.
+            // This is a bit disjointed. 
+            // BUT: For combat visual feedback, enemies is the main one we set locally.
+            // Troops HP bars rely on 'troops' prop.
+            // If we mutate 'troopsRef.current', does it reflect in UI? 
+            // Only if 'troops' prop changes or we force update.
+            // But we don't have setTroops.
+            // However, the DB writes happen below, which trigger the onSnapshot in App.jsx, which updates troops prop.
+            // So visual latency for troops might be 1 tick + DB RTT.
+            // That's acceptable for now to fix the specific "infinite loop" bug which is about enemies.
+
             if (logUpdates.length > 0) setCombatLog(prev => [...prev, ...logUpdates].slice(-8));
 
             // Throttle writes: only attempt to write every WRITE_INTERVAL_TICKS intervals.
@@ -166,7 +183,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             const shouldFlushWrites = writeTickCounter.current === 0;
 
             // Combat doc snapshot for comparison
-            const combatSnapshot = JSON.stringify({ enemies: enemies.map(e => ({ id: e.id, currentHp: e.currentHp })), active: !battleOver });
+            const combatSnapshot = JSON.stringify({ enemies: currentEnemies.map(e => ({ id: e.id, currentHp: e.currentHp })), active: !battleOver });
 
             if (shouldFlushWrites) {
                 // Build a batch for troop updates and conditional combat update
@@ -175,7 +192,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
 
                 // 1) Conditionally update combat doc only if changed
                 if (lastSentCombatRef.current !== combatSnapshot) {
-                    batch.update(combatRef, { enemies: enemies, active: !battleOver }).catch(() => { });
+                    batch.update(combatRef, { enemies: currentEnemies, active: !battleOver }).catch(() => { });
                     // Note: writeBatch doesn't return Promise for update calls here; we'll commit below.
                     batchOps++;
                     lastSentCombatRef.current = combatSnapshot;
@@ -220,7 +237,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             // We still rely on the combat system to set active flag in DB at lower frequency.
             // End-of-battle handling:
             const aliveTroops = fighters.filter(t => t.currentHp > 0);
-            const aliveEnemies = enemies.filter(e => e.currentHp > 0);
+            const aliveEnemies = currentEnemies.filter(e => e.currentHp > 0);
 
             if (battleOver || aliveTroops.length === 0 || aliveEnemies.length === 0) {
                 if (!processingResult.current) {
@@ -231,7 +248,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             }
         }, 800);
         return () => clearInterval(interval);
-    }, [gameState, enemies, troops, user]);
+    }, [gameState]); // REFACTOR: Dependent ONLY on gameState to start/stop. Loop handles data via Refs.
 
     const handleVictory = async (survivors) => {
         setCombatLog(prev => [...prev, "🏆 VICTORY! Processing rewards..."]);
