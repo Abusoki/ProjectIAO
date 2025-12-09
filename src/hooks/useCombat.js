@@ -18,15 +18,25 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
     const lastSentTroopsRef = useRef(new Map());
 
     // Sync refs when entering combat or when props change if NOT fighting (to keep fresh prep data)
+    // Sync refs when entering combat or when props change if NOT fighting (to keep fresh prep data)
     useEffect(() => {
+        const hasIdsChanged = () => {
+            const propIds = enemies.map(e => e.id).join(',');
+            const refIds = enemiesRef.current.map(e => e.id).join(',');
+            return propIds !== refIds;
+        };
+
         if (gameState !== 'fighting') {
             enemiesRef.current = enemies;
             troopsRef.current = troops;
         } else {
-            // FIX: If we just started fighting, the refs might be empty because 'fighting' state
-            // blocked the update. If refs are empty but props are not, initialize them!
-            if (enemiesRef.current.length === 0 && enemies.length > 0) {
+            // FIX: If we just started fighting, OR if the enemies have fundamentally changed (new battle),
+            // update the refs! This prevents holding onto "Dead" enemies from the previous battle.
+            if ((enemiesRef.current.length === 0 && enemies.length > 0) || hasIdsChanged()) {
+                console.log("New Battle Detected or Init. Syncing Refs.");
                 enemiesRef.current = enemies;
+                // Also reset success flag just in case
+                processingResult.current = false;
             }
             if (troopsRef.current.length === 0 && troops.length > 0) {
                 troopsRef.current = troops;
