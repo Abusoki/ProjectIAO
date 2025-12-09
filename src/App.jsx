@@ -227,10 +227,21 @@ export default function App() {
             if (snap.exists()) {
                 const data = snap.data();
                 if (data.active) {
-                    setEnemies(data.enemies);
-                    if (data.troopIds) setSelectedTroops(data.troopIds);
-                    setGameState('fighting');
+                    // FIX: If we are already fighting locally, ignore stale DB updates to prevent overwriting local state
+                    if (gameStateRef.current !== 'fighting') {
+                        setEnemies(data.enemies);
+                        if (data.troopIds) setSelectedTroops(data.troopIds);
+                        setGameState('fighting');
+                    }
                 } else if (gameStateRef.current === 'fighting') {
+                    // If DB says not active, but we are fighting, it means we won/lost elsewhere or need to finish
+                    // However, useCombat handles the victory transition locally first. 
+                    // This creates a failsafe if the local state thinks we are fighting but the server says we are done.
+                    // But usually useCombat sets victory locally first.
+                    // Let's keep the victory transition for safety, or we can trust useCombat.
+                    // If we trust useCombat, we might rely on it. 
+                    // But if this triggers, it might be due to a reset.
+                    // Actually, if data.active is false, we should probably respect that if we are fighting forever.
                     setGameState('victory');
                 }
             }
