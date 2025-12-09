@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, doc, onSnapshot, getDoc, setDoc, deleteDoc, updateDoc, getCountFromServer } from 'firebase/firestore';
+import { collection, doc, onSnapshot, getDoc, setDoc, deleteDoc, updateDoc, getCountFromServer, writeBatch } from 'firebase/firestore';
 import { auth, db } from './config/firebase';
 import { generateRecruit } from './utils/mechanics';
 import { TAVERN_REFRESH_MS, MISSIONS } from './config/gameData';
@@ -66,24 +66,32 @@ export default function App() {
     const maxTroops = playerLevel >= 20 ? 5 : (playerLevel >= 10 ? 4 : 3);
 
     // --- State Wrapper for Cleanup ---
-    const handleGameStateChange = (newState) => {
+    const handleGameStateChange = async (newState) => {
         setGameState(newState);
         if (newState === 'idle') {
             const activeTroops = troopsRef.current.filter(t => t.inCombat);
+
+            const batch = writeBatch(db);
+            let ops = 0;
+
             if (activeTroops.length > 0) {
                 activeTroops.forEach(t => {
-                    updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', t.uid), {
-                        inCombat: false, actionGauge: 0
-                    }).catch(e => console.error("Cleanup error", e));
+                    const ref = doc(db, 'artifacts', appId, 'users', user.uid, 'troops', t.uid);
+                    batch.update(ref, { inCombat: false, actionGauge: 0 });
+                    ops++;
                 });
             }
-            updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'system', 'combat'), { active: false })
-                .catch(e => console.error("Cleanup error", e));
+
+            const combatRef = doc(db, 'artifacts', appId, 'users', user.uid, 'system', 'combat');
+            batch.update(combatRef, { active: false });
+            ops++;
+
+            if (ops > 0) await batch.commit().catch(e => console.error("Cleanup error", e));
         }
     };
 
     // --- Hooks Logic ---
-    useGameLoop(user, troops, inventory, gameState, profile);
+    useGameLoop(user, troops, inventory, gameState, profile, setTroops);
 
     const { combatLog, setCombatLog, damageEvents, currentLoot } = useCombat(
         user, troops, enemies, gameState, handleGameStateChange, setEnemies, setView, selectedTroops, inventory, autoBattle, setAutoBattle, setTroops
@@ -118,15 +126,6 @@ export default function App() {
 
         setLastMissionKey(missionKey);
 
-        // 1. Mark troops as inCombat
-        const updates = validSelectedIds.map(uid =>
-            updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', uid), {
-                inCombat: true, actionGauge: 0, battleKills: 0, combatHitCount: 0, combatAttackCount: 0
-            })
-        );
-        await Promise.all(updates);
-
-        // 2. Create Combat Session in DB
         // Determine enemy count from mission if provided
         const minSpawn = mission.spawnMin || 1;
         const maxSpawn = mission.spawnMax || Math.max(1, Math.floor(Math.random() * 4) + 1);
@@ -153,9 +152,22 @@ export default function App() {
             return { id: `mob_${i}`, name: `Foe ${i + 1}`, maxHp: 30, currentHp: 30, ap: 6, def: 0, spd: 8, actionGauge: Math.random() * 50 };
         });
 
-        await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'system', 'combat'), {
+        // Batch Updates
+        const batch = writeBatch(db);
+
+        // 1. Mark troops as inCombat
+        validSelectedIds.forEach(uid => {
+            const tRef = doc(db, 'artifacts', appId, 'users', user.uid, 'troops', uid);
+            batch.update(tRef, { inCombat: true, actionGauge: 0, battleKills: 0, combatHitCount: 0, combatAttackCount: 0 });
+        });
+
+        // 2. Create Combat Session
+        const combatRef = doc(db, 'artifacts', appId, 'users', user.uid, 'system', 'combat');
+        batch.set(combatRef, {
             active: true, enemies: newEnemies, troopIds: validSelectedIds, log: [`Deployed to ${mission.name}`], tick: 0
         });
+
+        await batch.commit();
 
         // 3. Update Local State
         setEnemies(newEnemies);
