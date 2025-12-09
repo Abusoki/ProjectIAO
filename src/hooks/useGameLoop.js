@@ -57,6 +57,7 @@ export function useGameLoop(user, troops, inventory, gameState, profile, setTroo
 
         if (!hasTitle('Bloblin Slayer') && (profile.totalBloblinKills || 0) >= 1000) newTitles.push('Bloblin Slayer');
         if (!hasTitle('Expendable') && (profile.totalTroopDeaths || 0) >= 5) newTitles.push('Expendable');
+        if (!hasTitle('Beta')) newTitles.push('Beta');
 
         if (newTitles.length > 0) {
             updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'profile', 'meta'), {
