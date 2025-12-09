@@ -39,7 +39,11 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                 // Also reset success flag just in case
                 processingResult.current = false;
             }
-            if (troopsRef.current.length === 0 && troops.length > 0) {
+            // Sync troops if empty OR if we believe we should be fighting but have no fighters in the ref
+            // This handles the transition from Idle -> Fighting where the Ref might still hold the "Idle" state troops.
+            const hasFighters = troopsRef.current.some(t => t.inCombat);
+            if ((troopsRef.current.length === 0 && troops.length > 0) || !hasFighters) {
+                console.log("Syncing troops ref for combat start");
                 troopsRef.current = troops;
             }
         }
