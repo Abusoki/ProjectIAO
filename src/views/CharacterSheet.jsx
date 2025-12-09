@@ -4,7 +4,7 @@ import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { getEffectiveStats } from '../utils/mechanics';
 import { getUnitAvatar } from '../utils/avatarUtils';
-import { LEVEL_XP_CURVE, COOKING_XP_CURVE, SMITHING_XP_CURVE } from '../config/gameData';
+import { LEVEL_XP_CURVE, COOKING_XP_CURVE, SMITHING_XP_CURVE, SKILLS } from '../config/gameData';
 import ProgressBar from '../components/ui/ProgressBar';
 
 export default function CharacterSheet({ user, unit, inventory, setView, appId }) {
@@ -247,6 +247,7 @@ export default function CharacterSheet({ user, unit, inventory, setView, appId }
             </div>
 
             {/* Service Record */}
+            {/* Service Record */}
             <div className="bg-slate-800 rounded-lg border border-slate-700 p-4">
                 <h3 className="font-bold text-slate-300 mb-4 flex items-center gap-2"><Scroll size={16} /> Service Record</h3>
                 <div className="grid grid-cols-3 gap-2 text-center">
@@ -264,6 +265,39 @@ export default function CharacterSheet({ user, unit, inventory, setView, appId }
                     </div>
                 </div>
             </div>
+
+            {/* Abilities Section */}
+            {unit.level >= 3 && SKILLS[unit.race] && (
+                <div className="bg-slate-800 rounded-lg border border-slate-700 p-4">
+                    <h3 className="font-bold text-slate-300 mb-4 flex items-center gap-2"><Zap size={16} /> Abilities (Lvl 3+)</h3>
+                    <div className="grid grid-cols-1 gap-2">
+                        {SKILLS[unit.race].row1.map(skill => {
+                            const currentSkills = unit.skills || [];
+                            const hasSkill = currentSkills.includes(skill.id);
+                            // Locked if we have another skill from this row (row1)
+                            const locked = currentSkills.some(s => SKILLS[unit.race].row1.find(r => r.id === s && r.id !== skill.id));
+
+                            return (
+                                <div key={skill.id} className={`p-3 rounded border flex justify-between items-center ${hasSkill ? 'bg-amber-900/40 border-amber-600' : 'bg-slate-900 border-slate-700'} ${locked ? 'opacity-50 grayscale' : ''}`}>
+                                    <div>
+                                        <div className={`font-bold ${hasSkill ? 'text-amber-400' : 'text-slate-300'}`}>{skill.name}</div>
+                                        <div className="text-xs text-slate-500">{skill.desc}</div>
+                                    </div>
+                                    {!hasSkill && !locked && (
+                                        <button
+                                            onClick={() => updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', unit.uid), { skills: [skill.id] })}
+                                            className="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded text-xs font-bold"
+                                        >
+                                            Learn
+                                        </button>
+                                    )}
+                                    {hasSkill && <div className="text-xs text-amber-500 font-bold">Learned</div>}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

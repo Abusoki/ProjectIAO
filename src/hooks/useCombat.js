@@ -17,8 +17,8 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
     const troopsRef = useRef(troops);
     const lastSentCombatRef = useRef(null);
     const lastSentTroopsRef = useRef(new Map());
+    const combatStartTimeRef = useRef(null);
 
-    // Sync refs when entering combat or when props change if NOT fighting (to keep fresh prep data)
     // Sync refs when entering combat or when props change if NOT fighting (to keep fresh prep data)
     useEffect(() => {
         const hasIdsChanged = () => {
@@ -30,12 +30,14 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
         if (gameState !== 'fighting') {
             enemiesRef.current = enemies;
             troopsRef.current = troops;
+            combatStartTimeRef.current = null;
         } else {
             // FIX: If we just started fighting, OR if the enemies have fundamentally changed (new battle),
             // update the refs! This prevents holding onto "Dead" enemies from the previous battle.
             if ((enemiesRef.current.length === 0 && enemies.length > 0) || hasIdsChanged()) {
                 console.log("New Battle Detected or Init. Syncing Refs.");
                 enemiesRef.current = enemies;
+                combatStartTimeRef.current = Date.now();
                 // Also reset success flag just in case
                 processingResult.current = false;
             }
@@ -102,18 +104,44 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             const fighters = currentTroops.filter(t => t.inCombat);
             if (fighters.length === 0 && currentEnemies.length > 0) return;
 
+            // Start Timer if not set
+            if (!combatStartTimeRef.current) combatStartTimeRef.current = Date.now();
+
+            const hasSkill = (u, id) => (Array.isArray(u.skills) ? u.skills.includes(id) : u.skills?.row1 === id);
+
             // Increment action gauges — apply Elvish Flicker double speed while remaining
             [...fighters, ...currentEnemies].forEach(u => {
                 if (u.currentHp > 0) {
+                    // RAGE (Human)
+                    if (u.uid && hasSkill(u, 'rage') && !u._rageTriggered) {
+                        u._rageTriggered = true;
+                        u.currentHp = Math.max(1, u.currentHp - 10);
+                        logUpdates.push({ text: `${u.name} enters RAGE! (-10 HP)`, source: 'player' });
+                        addDamageEvent(u.uid, 10, 'damage');
+
+                        currentEnemies.forEach(e => {
+                            if (e.currentHp > 0) {
+                                e.currentHp -= 5;
+                                addDamageEvent(e.id || e.uid, 5, 'damage');
+                                logUpdates.push({ text: `Rage hits ${e.name} for 5`, source: 'player' });
+                            }
+                        });
+                    }
+
+                    // LOOTER (Human) - Skip gauge if starting
+                    if (u.uid && hasSkill(u, 'looter') && (Date.now() - combatStartTimeRef.current < 5000)) {
+                        return;
+                    }
+
                     let baseSpd = (u.baseStats?.spd || u.spd || 8);
 
                     // Initialize flicker counter when combat begins (runtime-only)
-                    if (u.skills?.row1 === 'elvish_flicker' && u._elvishFlickerRemaining === undefined) {
+                    if (hasSkill(u, 'elvish_flicker') && u._elvishFlickerRemaining === undefined) {
                         u._elvishFlickerRemaining = 3;
                     }
 
                     // If flicker active, double the speed contribution
-                    if (u.skills?.row1 === 'elvish_flicker' && u._elvishFlickerRemaining > 0) {
+                    if (hasSkill(u, 'elvish_flicker') && u._elvishFlickerRemaining > 0) {
                         baseSpd *= 2;
                     }
 
@@ -292,6 +320,9 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             if (survivors && survivors.length > 0) {
                 const hasGloves = survivors.some(t => t.equipment?.gloves?.name === 'Slimey Gloves');
                 if (hasGloves) dropChance *= 2;
+
+                const hasLooter = survivors.some(t => Array.isArray(t.skills) ? t.skills.includes('looter') : t.skills?.row1 === 'looter');
+                if (hasLooter) dropChance *= 2;
             }
 
             // Determine enemy type by id or name
