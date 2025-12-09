@@ -93,6 +93,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             // REFACTOR: Read from REFS
             let currentTroops = troopsRef.current;
             let currentEnemies = enemiesRef.current;
+            if (currentEnemies.length === 0) return;
 
             const fighters = currentTroops.filter(t => t.inCombat);
             if (fighters.length === 0 && currentEnemies.length > 0) return;
