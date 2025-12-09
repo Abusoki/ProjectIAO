@@ -45,9 +45,22 @@ export function useGameLoop(user, troops, inventory, gameState, profile, setTroo
 
         if (newUnlocks.length > 0) {
             const updated = [...unlocked, ...newUnlocks];
-            // We update meta which is listened to by App.jsx, refreshing 'profile'
             updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'profile', 'meta'), {
                 achievements: updated
+            });
+        }
+
+        // --- TITLES CHECK ---
+        const unlockedTitles = profile.unlockedTitles || [];
+        const newTitles = [];
+        const hasTitle = (id) => unlockedTitles.includes(id);
+
+        if (!hasTitle('Bloblin Slayer') && (profile.totalBloblinKills || 0) >= 1000) newTitles.push('Bloblin Slayer');
+        if (!hasTitle('Expendable') && (profile.totalTroopDeaths || 0) >= 5) newTitles.push('Expendable');
+
+        if (newTitles.length > 0) {
+            updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'profile', 'meta'), {
+                unlockedTitles: [...unlockedTitles, ...newTitles]
             });
         }
     }, [user, troops, inventory, gameState, profile]);
@@ -113,10 +126,8 @@ export function useGameLoop(user, troops, inventory, gameState, profile, setTroo
             const crafters = currentTroops.filter(t => t.activity === 'cooking' || t.activity === 'smithing');
             if (crafters.length === 0) return;
 
-            let localTroops = [...currentTroops];
-            let shouldUpdateLocal = false;
-            let batch = writeBatch(db);
-            let writes = 0;
+            let workingInventory = [...currentInventory];
+            let inventoryDirty = false;
 
             for (const crafter of crafters) {
                 const idx = localTroops.findIndex(t => t.uid === crafter.uid);
@@ -124,45 +135,43 @@ export function useGameLoop(user, troops, inventory, gameState, profile, setTroo
 
                 // --- COOKING LOGIC ---
                 if (crafter.activity === 'cooking') {
-                    const slimePaste = currentInventory.find(i => i.name === 'Slime Paste');
-                    if (!slimePaste) {
+                    const slimePasteIdx = workingInventory.findIndex(i => i.name === 'Slime Paste');
+                    if (slimePasteIdx === -1) {
                         batch.update(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', crafter.uid), { activity: 'idle', cookingProgress: 0 });
                         writes++;
-                        continue; // Abort this crafter
+                        continue;
                     }
 
                     // Increment Progress Locally
                     let newProgress = (crafter.cookingProgress || 0) + 10;
 
                     if (newProgress >= 100) {
-                        // COMPLETION: Write to DB
+                        // COMPLETION
                         const hasGloves = crafter.equipment?.gloves?.name === 'Slimey Gloves';
                         const lvl = crafter.cooking?.level || 1;
                         let failChance = Math.max(0, 50 - ((lvl - 1) * 5) - (hasGloves ? 2 : 0));
                         const isSuccess = Math.random() * 100 > failChance;
 
-                        let newInv = currentInventory.filter(i => i.id !== slimePaste.id);
-                        if (isSuccess) newInv.push({ id: generateId(), name: "Slime Bread", type: "food", desc: "Restores 10 HP", value: 10 });
+                        // Consume 1 item from working inventory
+                        workingInventory.splice(slimePasteIdx, 1);
 
-                        // Inventory Update
-                        batch.update(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'profile', 'data'), { inventory: newInv });
+                        if (isSuccess) workingInventory.push({ id: generateId(), name: "Slime Bread", type: "food", desc: "Restores 10 HP", value: 10 });
+                        inventoryDirty = true;
 
                         let newXp = (crafter.cooking?.xp || 0) + 10;
                         let newLvl = lvl;
                         if (newXp >= SKILL_XP_CURVE[newLvl] && newLvl < MAX_COOKING_LEVEL) newLvl++;
 
-                        // Troop Update (Reset Progress)
+                        // Troop Update
                         batch.update(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', crafter.uid), {
                             cookingProgress: 0, "cooking.xp": newXp, "cooking.level": newLvl
                         });
                         writes++;
 
-                        // Reset local immediately for responsiveness
                         localTroops[idx] = { ...localTroops[idx], cookingProgress: 0, cooking: { ...localTroops[idx].cooking, xp: newXp, level: newLvl } };
                         shouldUpdateLocal = true;
 
                     } else {
-                        // PROGRESS: Update Local ONLY
                         localTroops[idx] = { ...localTroops[idx], cookingProgress: newProgress };
                         shouldUpdateLocal = true;
                     }
@@ -173,8 +182,9 @@ export function useGameLoop(user, troops, inventory, gameState, profile, setTroo
                     const recipeId = crafter.smithingTarget;
                     const recipe = SMITHING_RECIPES.find(r => r.id === recipeId);
 
-                    const ingredients = currentInventory.filter(i => i.name === recipe.input);
-                    if (ingredients.length < recipe.count) {
+                    // Check count in working inventory
+                    const count = workingInventory.filter(i => i.name === recipe.input).length;
+                    if (count < recipe.count) {
                         batch.update(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', crafter.uid), { activity: 'idle', smithingProgress: 0 });
                         writes++;
                         continue;
@@ -185,17 +195,16 @@ export function useGameLoop(user, troops, inventory, gameState, profile, setTroo
 
                     if (newProgress >= 100) {
                         // COMPLETION
-                        let newInv = [...currentInventory];
+                        // Consume Ingredients
                         for (let k = 0; k < recipe.count; k++) {
-                            // Naive remove first found instance
-                            const iIdx = newInv.findIndex(i => i.name === recipe.input);
-                            if (iIdx > -1) newInv.splice(iIdx, 1);
+                            const iIdx = workingInventory.findIndex(i => i.name === recipe.input);
+                            if (iIdx > -1) workingInventory.splice(iIdx, 1);
                         }
 
-                        if (recipe.id === 'iron_bar') newInv.push({ id: generateId(), name: "Iron Bar", type: "resource" });
-                        if (recipe.id === 'iron_sword') newInv.push({ id: generateId(), name: "Iron Sword", type: "weapon", stats: { ap: 5, spd: -1 } });
+                        if (recipe.id === 'iron_bar') workingInventory.push({ id: generateId(), name: "Iron Bar", type: "resource" });
+                        if (recipe.id === 'iron_sword') workingInventory.push({ id: generateId(), name: "Iron Sword", type: "weapon", stats: { ap: 5, spd: -1 } });
 
-                        batch.update(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'profile', 'data'), { inventory: newInv });
+                        inventoryDirty = true;
 
                         let newXp = (crafter.smithing?.xp || 0) + recipe.xp;
                         let newLvl = crafter.smithing?.level || 1;
@@ -210,12 +219,18 @@ export function useGameLoop(user, troops, inventory, gameState, profile, setTroo
                         shouldUpdateLocal = true;
 
                     } else {
-                        // PROGRESS: Local Only
                         localTroops[idx] = { ...localTroops[idx], smithingProgress: newProgress };
                         shouldUpdateLocal = true;
                     }
                 }
             }
+
+            // Save Inventory ONCE if needed
+            if (inventoryDirty) {
+                batch.update(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'profile', 'data'), { inventory: workingInventory });
+                writes++; // Ensure commit happens even if no troops updated
+            }
+
 
             // Commit Writes if any (Completions)
             if (writes > 0) {

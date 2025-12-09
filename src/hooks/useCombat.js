@@ -1,6 +1,6 @@
 // Modified handleVictory to use centralized DROPS + ENEMY_DROPS tables
 import { useState, useEffect, useRef } from 'react';
-import { doc, updateDoc, setDoc, deleteDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, deleteDoc, collection, query, where, getDocs, writeBatch, increment, arrayUnion } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { getEffectiveStats } from '../utils/mechanics';
 import { LEVEL_XP_CURVE, DROPS, ENEMY_DROPS } from '../config/gameData';
@@ -164,12 +164,12 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                     // Elvish Mindset: prevent first N incoming hits
                     if (target.skills?.row1 === 'elvish_mindset' && target._elvishMindsetRemaining > 0) {
                         target._elvishMindsetRemaining = Math.max(0, target._elvishMindsetRemaining - 1);
-                        logUpdates.push(`${target.name} shrugs off the hit!`);
+                        logUpdates.push({ text: `${target.name} shrugs off the hit!`, source: 'system' });
                         addDamageEvent(target.id || target.uid, 0, 'block');
                         // Do not apply damage or death logic for this hit
                     } else {
                         target.currentHp -= finalDmg;
-                        logUpdates.push(`${actor.name} hits ${target.name} for ${finalDmg}`);
+                        logUpdates.push({ text: `${actor.name} hits ${target.name} for ${finalDmg}`, source: isPlayer ? 'player' : 'enemy' });
                         addDamageEvent(target.id || target.uid, finalDmg, 'damage');
 
                         if (isPlayer && actor.skills?.row1 === 'oil_refined') {
@@ -178,13 +178,17 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                                 const heal = 5;
                                 actor.currentHp = Math.min(stats.maxHp, actor.currentHp + heal);
                                 addDamageEvent(actor.uid, heal, 'heal');
-                                logUpdates.push(`${actor.name} heals ${heal} HP`);
+                                logUpdates.push({ text: `${actor.name} heals ${heal} HP`, source: 'player' });
                             }
                         }
 
                         if (target.currentHp <= 0) {
-                            logUpdates.push(`☠️ ${target.name} died!`);
-                            if (isPlayer) actor.battleKills = (actor.battleKills || 0) + 1;
+                            logUpdates.push({ text: `☠️ ${target.name} died!`, source: 'system' });
+                            if (isPlayer) {
+                                actor.battleKills = (actor.battleKills || 0) + 1;
+                                // Track specific bloblin kills for this battle
+                                if (target.type === 'blob' || target.name.includes('Bloblin')) actor.bloblinKills = (actor.bloblinKills || 0) + 1;
+                            }
                         }
                     }
 
@@ -278,7 +282,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
         try {
             console.log("HandleVictory started. Setting state to victory.");
             setGameState('victory');
-            setCombatLog(prev => [...prev, "🏆 VICTORY! Processing rewards..."]);
+            setCombatLog(prev => [...prev, { text: "🏆 VICTORY! Processing rewards...", source: 'system' }]);
 
             const xpGain = 20;
             let newInv = [...inventoryRef.current];
@@ -315,7 +319,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                             collectedLoot.push(newItem);
                         }
 
-                        setCombatLog(prev => [...prev, `+ ${qty > 1 ? qty + 'x ' : ''}${def.name}`]);
+                        setCombatLog(prev => [...prev, { text: `+ ${qty > 1 ? qty + 'x ' : ''}${def.name}`, source: 'system' }]);
                     }
                 } catch (e) { console.error('Drop roll failed', e); }
             }
@@ -327,7 +331,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                     const newItem = { id: generateId(), ...fallbackItem };
                     newInv.push(newItem);
                     collectedLoot.push(newItem);
-                    setCombatLog(prev => [...prev, `+ ${fallbackItem.name}`]);
+                    setCombatLog(prev => [...prev, { text: `+ ${fallbackItem.name}`, source: 'system' }]);
                 }
             }
 
@@ -350,14 +354,44 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                     const effectiveStats = getEffectiveStats({ ...unit, level: newLevel }, unit.equipment ? Object.values(unit.equipment) : []);
                     const isCloseCall = (unit.currentHp / effectiveStats.maxHp) <= 0.05;
 
+                    const isCloseCall = (unit.currentHp / effectiveStats.maxHp) <= 0.05;
+
                     const newLore = {
                         missionsWon: (unit.lore?.missionsWon || 0) + 1,
                         kills: (unit.lore?.kills || 0) + (unit.battleKills || 0),
-                        closeCalls: (unit.lore?.closeCalls || 0) + (isCloseCall ? 1 : 0)
+                        closeCalls: (unit.lore?.closeCalls || 0) + (isCloseCall ? 1 : 0),
+                        bloblinKills: (unit.lore?.bloblinKills || 0) + (unit.bloblinKills || 0)
                     };
-                    batch.update(ref, { xp: newXp, level: newLevel, lore: newLore, inCombat: false, actionGauge: 0 });
+
+                    // Character Title: Bloblin
+                    const newTitles = unit.titles || [];
+                    if (newLore.bloblinKills >= 100 && !newTitles.includes('Bloblin')) {
+                        newTitles.push('Bloblin');
+                        setCombatLog(prev => [...prev, { text: `${unit.name} earned title: Bloblin!`, source: 'system' }]);
+                    }
+
+                    batch.update(ref, { xp: newXp, level: newLevel, lore: newLore, titles: newTitles, inCombat: false, actionGauge: 0 });
                 }
             });
+
+            // Update Profile & Meta (Titles)
+            const metaRef = doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'profile', 'meta');
+            // Calculate total bloblin kills from this battle
+            const totalBloblinKills = survivors.reduce((acc, s) => acc + (s.bloblinKills || 0), 0);
+
+            if (totalBloblinKills > 0) {
+                // We blindly increment. For the Title check, strictly we should read first or use a cloud function,
+                // but here we can just do a client-side check if we had the profile loaded. 
+                // Since we don't have profile prop here easily (it's in App), we'll do a blind update 
+                // and maybe check titles next time or rely on a separate Effect in App.js?
+                // Or we can just use setDoc with merge if we want to be safe?
+                // increment() is best.
+                batch.update(metaRef, {
+                    totalBloblinKills: increment(totalBloblinKills)
+                });
+                // Note: We can't easily check for "Bloblin Slayer" title unlock here without reading meta.
+                // We will leave the "Player Title" unlocking to the App.js effect loop which watches profile/meta.
+            }
 
             // Update Profile
             const profileRef = doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'profile', 'data');
@@ -404,12 +438,17 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
         try {
             const batch = writeBatch(db);
             batch.update(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combat'), { active: false });
+
             party.forEach(u => batch.delete(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', u.uid)));
+
+            // Increment deaths
+            const metaRef = doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'profile', 'meta');
+            batch.update(metaRef, { totalTroopDeaths: increment(party.length) });
+
             await batch.commit();
         } catch (e) {
             console.error('Batched defeat commit failed', e);
-            await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combat'), { active: false }).catch(() => { });
-            await Promise.all(party.map(u => deleteDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', u.uid))));
+            // Fallback manually? Simpler to just retry or alert.
         }
         await cleanupInCombatFlags();
     };

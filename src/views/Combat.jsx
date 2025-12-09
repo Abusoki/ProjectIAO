@@ -83,11 +83,21 @@ export default function Combat({ troops, enemies, gameState, setGameState, setVi
 
             {/* Combat Log */}
             <div className="flex-1 bg-black/40 rounded-lg p-3 overflow-y-auto font-mono text-xs text-slate-300 h-48 border border-slate-800 shadow-inner flex flex-col-reverse">
-                {[...combatLog].reverse().map((log, i) => (
-                    <div key={i} className={`mb-1 ${log.includes("died") ? "text-red-400 font-bold" : log.includes("VICTORY") ? "text-green-400 font-bold" : ""}`}>
-                        {">"} {log}
-                    </div>
-                ))}
+                {[...combatLog].reverse().map((logItem, i) => {
+                    const text = logItem.text || logItem; // Fallback for old strings
+                    const source = logItem.source || 'system';
+                    let color = 'text-slate-300';
+                    if (source === 'player') color = 'text-green-300';
+                    if (source === 'enemy') color = 'text-orange-400';
+
+                    const isSpecial = text.includes("died") || text.includes("VICTORY");
+
+                    return (
+                        <div key={i} className={`mb-1 ${color} ${isSpecial ? "font-bold" : ""}`}>
+                            {">"} {text}
+                        </div>
+                    );
+                })}
             </div>
 
             {/* End of Battle Overlay */}

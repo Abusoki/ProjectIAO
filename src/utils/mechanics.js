@@ -10,8 +10,8 @@ export const getEffectiveStats = (unit) => {
         def: Math.floor(unit.baseStats.def + (levelBonus * 1)),
         spd: Math.floor(unit.baseStats.spd + (levelBonus * 1)),
     };
-    
-    const slots = ['mainHand', 'gloves', 'cape', 'boots'];
+
+    const slots = ['mainHand', 'helm', 'body', 'legs', 'gloves', 'boots', 'cape'];
     slots.forEach(slot => {
         const item = unit.equipment?.[slot];
         if (item && item.stats) {
@@ -21,7 +21,6 @@ export const getEffectiveStats = (unit) => {
             if (item.stats.spd) stats.spd += item.stats.spd;
         }
     });
-
     stats.maxHp = Math.max(1, stats.maxHp);
     stats.ap = Math.max(1, stats.ap);
     return stats;
@@ -47,11 +46,11 @@ export const generateRecruit = () => {
         level: 1,
         xp: 0,
         currentHp: Math.floor(rawHp * rMod.hpMod * cMod.hpMod),
-        baseStats: { 
+        baseStats: {
             hp: Math.floor(rawHp * rMod.hpMod * cMod.hpMod),
-            ap: Math.floor(rawAp * rMod.apMod * cMod.apMod), 
-            def: Math.floor(rawDef * rMod.defMod * cMod.defMod), 
-            spd: Math.floor(rawSpd * rMod.spdMod * cMod.spdMod) 
+            ap: Math.floor(rawAp * rMod.apMod * cMod.apMod),
+            def: Math.floor(rawDef * rMod.defMod * cMod.defMod),
+            spd: Math.floor(rawSpd * rMod.spdMod * cMod.spdMod)
         },
         equipment: { mainHand: null, gloves: null, cape: null, boots: null },
         lore: { missionsWon: 0, kills: 0, closeCalls: 0 },

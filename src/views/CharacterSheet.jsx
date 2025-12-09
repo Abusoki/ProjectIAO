@@ -40,9 +40,7 @@ export default function CharacterSheet({ user, unit, inventory, setView, appId }
 
     const equipItem = async (item) => {
         let slot = 'mainHand';
-        if (item.type === 'gloves') slot = 'gloves';
-        if (item.type === 'cape') slot = 'cape';
-        if (item.type === 'boots') slot = 'boots';
+        if (['gloves', 'cape', 'boots', 'helm', 'body', 'legs'].includes(item.type)) slot = item.type;
 
         let newInv = inventory.filter(i => i.id !== item.id);
         if (unit.equipment?.[slot]) newInv.push(unit.equipment[slot]);
@@ -191,10 +189,13 @@ export default function CharacterSheet({ user, unit, inventory, setView, appId }
                 <h3 className="font-bold text-slate-300 mb-4 flex items-center gap-2"><Shirt size={16} /> Equipment</h3>
                 <div className="grid grid-cols-4 gap-2">
                     {[
+                        { slot: 'helm', icon: <Skull size={16} /> },
                         { slot: 'mainHand', icon: <Sword size={16} /> },
+                        { slot: 'body', icon: <Shirt size={16} /> },
+                        { slot: 'legs', icon: <Footprints size={16} /> }, // Using Footprints as placeholder or find Leg icon
                         { slot: 'gloves', icon: <Hand size={16} /> },
-                        { slot: 'cape', icon: <Shirt size={16} /> },
-                        { slot: 'boots', icon: <Footprints size={16} /> }
+                        { slot: 'boots', icon: <Footprints size={16} /> },
+                        { slot: 'cape', icon: <Shirt size={16} /> }
                     ].map(({ slot, icon }) => {
                         const item = unit.equipment?.[slot];
                         return (
@@ -207,15 +208,31 @@ export default function CharacterSheet({ user, unit, inventory, setView, appId }
 
                 {/* Inventory List */}
                 <div className="mt-4">
-                    <div className="text-xs text-slate-500 mb-2 uppercase">Inventory</div>
+                    <div className="text-xs text-slate-500 mb-2 uppercase">Equipable Items</div>
                     <div className="space-y-1">
-                        {inventory.filter(i => ['weapon', 'gloves', 'cape', 'boots'].includes(i.type)).map((item, i) => (
-                            <button key={i} onClick={() => equipItem(item)} className="w-full text-left bg-slate-900 hover:bg-slate-700 p-2 rounded flex justify-between items-center border border-slate-700">
-                                <span className="text-sm">{item.name} <span className="text-xs text-slate-500 capitalize">({item.type})</span></span>
-                                <span className="text-xs text-green-400">Equip</span>
-                            </button>
-                        ))}
-                        {inventory.filter(i => ['weapon', 'gloves', 'cape', 'boots'].includes(i.type)).length === 0 && <div className="text-xs text-slate-600 italic">No equipment available.</div>}
+                        {(() => {
+                            // Stack items
+                            const equipable = inventory.filter(i => ['weapon', 'gloves', 'cape', 'boots', 'helm', 'body', 'legs'].includes(i.type));
+                            const stacks = {};
+                            equipable.forEach(item => {
+                                const key = item.name; // Simple grouping by name
+                                if (!stacks[key]) stacks[key] = { count: 0, item };
+                                stacks[key].count++;
+                            });
+
+                            if (Object.keys(stacks).length === 0) return <div className="text-xs text-slate-600 italic">No equipment available.</div>;
+
+                            return Object.values(stacks).map(({ item, count }, i) => (
+                                <button key={i} onClick={() => equipItem(item)} className="w-full text-left bg-slate-900 hover:bg-slate-700 p-2 rounded flex justify-between items-center border border-slate-700">
+                                    <span className="text-sm">
+                                        {item.name}
+                                        {count > 1 && <span className="text-slate-500 ml-2">x{count}</span>}
+                                        <span className="text-xs text-slate-500 capitalize ml-2">({item.type})</span>
+                                    </span>
+                                    <span className="text-xs text-green-400">Equip</span>
+                                </button>
+                            ));
+                        })()}
                     </div>
                 </div>
             </div>
