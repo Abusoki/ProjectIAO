@@ -244,6 +244,7 @@ export default function App() {
             if (snap.exists()) {
                 const data = snap.data();
                 if (data.active) {
+                    console.log("COMBAT LISTENER: Active=true. GameStateRef:", gameStateRef.current);
                     // FIX v2: STRICTER CHECK. Only start fighting if we are IDLE.
                     // If we are 'victory' or 'defeat', ignoring this stale update prevents the loop.
                     if (gameStateRef.current === 'idle') {
@@ -256,10 +257,12 @@ export default function App() {
                                 data.troopIds.includes(t.uid) ? { ...t, inCombat: true, actionGauge: 0 } : t
                             ));
                         }
+                        console.log("COMBAT LISTENER: Setting fighting state");
                         setGameState('fighting');
                         setView('combat'); // Force view switch if not already
                     }
                 } else if (gameStateRef.current === 'fighting') {
+                    console.log("COMBAT LISTENER: Active=false but State=fighting. Triggering victory.");
                     // If DB says not active, but we are fighting, it means we won/lost elsewhere or need to finish
                     setGameState('victory');
                 }
@@ -281,11 +284,11 @@ export default function App() {
         return () => { unsubTroops(); unsubProfile(); unsubTavern(); unsubBattle(); clearInterval(heartbeat); };
     }, [user]);
 
-    useEffect(() => {
-        getCountFromServer(collection(db, 'artifacts', appId, 'users')).then(snap => {
-            setUserCount(snap.data().count);
-        }).catch(err => console.error("Failed to get user count", err));
-    }, []);
+    // useEffect(() => {
+    //     getCountFromServer(collection(db, 'artifacts', appId, 'users')).then(snap => {
+    //         setUserCount(snap.data().count);
+    //     }).catch(err => console.error("Failed to get user count", err));
+    // }, []);
 
 
     if (!user) return <AuthScreen />;
