@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Clock, ChevronRight } from 'lucide-react';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -7,26 +7,54 @@ import { TAVERN_REFRESH_MS } from '../config/gameData';
 import { generateId } from '../utils/helpers';
 
 export default function Tavern({ tavernState, troops, maxTroops, setView, user, appId }) {
-    
+    const [refreshing, setRefreshing] = useState(false);
+
+    const createRecruits = () => Array.from({ length: 8 }, () => generateRecruit());
+
     const refreshTavern = async () => {
-        const newRecruits = Array.from({ length: 5 }, () => generateRecruit());
-        await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'system', 'tavern'), { 
-            recruits: newRecruits, 
-            nextRefresh: Date.now() + TAVERN_REFRESH_MS 
-        });
+        if (!user) return;
+        setRefreshing(true);
+        try {
+            const newRecruits = createRecruits();
+            await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'system', 'tavern'), {
+                recruits: newRecruits,
+                nextRefresh: Date.now() + TAVERN_REFRESH_MS
+            });
+        } catch (e) {
+            console.error('Failed to refresh tavern', e);
+        } finally {
+            setRefreshing(false);
+        }
     };
+
+    // Auto-refresh when nextRefresh is past due (runs client-side for the user's tavern doc)
+    useEffect(() => {
+        if (!tavernState || !tavernState.nextRefresh || !user) return;
+        if (Date.now() >= tavernState.nextRefresh) {
+            // debounced guard to avoid duplicate writes
+            refreshTavern();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [tavernState?.nextRefresh, user]);
 
     const recruitUnit = async (recruit) => {
         if (troops.length >= maxTroops) return;
         const { id, ...unitData } = recruit;
-        await Promise.all([
-            updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'system', 'tavern'), { 
-                recruits: tavernState.recruits.filter(r => r.id !== recruit.id) 
-            }),
-            setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', generateId()), unitData)
-        ]);
-        setView('barracks');
+        try {
+            // remove recruit from list and add as troop
+            await Promise.all([
+                updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'system', 'tavern'), {
+                    recruits: (tavernState.recruits || []).filter(r => r.id !== recruit.id)
+                }),
+                setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', generateId()), unitData)
+            ]);
+            setView('barracks');
+        } catch (e) {
+            console.error('Failed to recruit unit', e);
+        }
     };
+
+    const minutesToRefresh = tavernState?.nextRefresh ? Math.max(0, Math.floor((tavernState.nextRefresh - Date.now()) / 60000)) : null;
 
     return (
         <div className="space-y-4">
@@ -36,11 +64,12 @@ export default function Tavern({ tavernState, troops, maxTroops, setView, user, 
                     <h2 className="text-xl font-bold">The Rusty Flagon</h2>
                 </div>
                 <div className="text-xs bg-slate-800 px-2 py-1 rounded text-slate-400 flex items-center gap-1">
-                    <Clock size={12} /> New recruits in {Math.max(0, Math.floor((tavernState.nextRefresh - Date.now()) / 60000))}m
+                    <Clock size={12} /> {minutesToRefresh !== null ? `New recruits in ${minutesToRefresh}m` : 'Loading...'}
                 </div>
             </div>
+
             <div className="grid gap-4">
-                {tavernState.recruits && tavernState.recruits.length > 0 ? (
+                {tavernState?.recruits && tavernState.recruits.length > 0 ? (
                     tavernState.recruits.map(recruit => (
                         <div key={recruit.id} className="bg-slate-800 p-4 rounded-lg border border-slate-700 relative overflow-hidden">
                             <div className="flex justify-between items-start">
@@ -52,14 +81,19 @@ export default function Tavern({ tavernState, troops, maxTroops, setView, user, 
                                         <span title="AP">⚔️ {recruit.baseStats.ap}</span>
                                     </div>
                                 </div>
-                                <button onClick={() => recruitUnit(recruit)} className="bg-amber-700 hover:bg-amber-600 px-4 py-2 rounded font-bold text-sm shadow-lg">Hire</button>
+                                <button
+                                    onClick={() => recruitUnit(recruit)}
+                                    disabled={troops.length >= maxTroops}
+                                    className="bg-amber-700 hover:bg-amber-600 px-4 py-2 rounded font-bold text-sm shadow-lg disabled:opacity-50"
+                                >
+                                    Hire
+                                </button>
                             </div>
                         </div>
                     ))
-                ) : <div className="text-center py-12 text-slate-500 italic">The tavern is empty.</div>}
-            </div>
-            <div className="text-center">
-                <button onClick={refreshTavern} className="text-xs text-slate-600 underline mt-4">(Dev: Force Refresh)</button>
+                ) : (
+                    <div className="text-center py-12 text-slate-500 italic">The tavern is empty.</div>
+                )}
             </div>
         </div>
     );

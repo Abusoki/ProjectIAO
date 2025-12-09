@@ -58,7 +58,8 @@ export default function App() {
     useEffect(() => { gameStateRef.current = gameState; }, [gameState]);
 
     const playerLevel = troops.reduce((acc, t) => acc + t.level, 0);
-    const maxTroops = playerLevel >= 10 ? 4 : 3;
+    // Grant a 5th slot once total player level reaches 20.
+    const maxTroops = playerLevel >= 20 ? 5 : (playerLevel >= 10 ? 4 : 3);
 
     // --- State Wrapper for Cleanup ---
     const handleGameStateChange = (newState) => {
@@ -228,7 +229,7 @@ export default function App() {
         const unsubTavern = onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'system', 'tavern'), (snap) => {
             if (snap.exists()) setTavernState(snap.data());
             else {
-                const newRecruits = Array.from({ length: 5 }, () => generateRecruit());
+                const newRecruits = Array.from({ length: 8 }, () => generateRecruit());
                 setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'system', 'tavern'), { recruits: newRecruits, nextRefresh: Date.now() + TAVERN_REFRESH_MS });
             }
         });

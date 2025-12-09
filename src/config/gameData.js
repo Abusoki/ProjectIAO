@@ -40,7 +40,6 @@ export const DROPS = {
     dull_sword: { id: 'dull_sword', name: 'Dull Sword', type: 'weapon', stats: { ap: 2, maxHp: -5 }, desc: 'Rusty weapon.' }
 };
 
-// Map enemy types to drop pools (drop id + chance)
 export const ENEMY_DROPS = {
     rat: [{ id: 'rat_fur_cape', chance: 0.15 }],
     ice_imp: [{ id: 'ice_boots', chance: 0.12 }],
@@ -48,9 +47,7 @@ export const ENEMY_DROPS = {
     blob: [{ id: 'slime_paste', chance: 0.1 }, { id: 'slimey_gloves', chance: 0.05 }, { id: 'dull_sword', chance: 0.3 }]
 };
 
-// New mission definitions grouped by allowed party size — reference drop ids where applicable
 export const MISSIONS = {
-    // 1-character content
     training_dummy: {
         name: "Training Dummy",
         level: 1,
@@ -63,26 +60,22 @@ export const MISSIONS = {
         noXp: true,
         noLoot: true
     },
-
-    // 2-character content
     rat_showdown: {
         name: "Rat Showdown",
         level: 2,
         desc: "Face 2–3 aggressive rats. Small chance for a Rat Fur Cape.",
         enemyType: "rat",
-        minParty: 2,
+        minParty: 1,
         maxParty: 2,
         spawnMin: 2,
         spawnMax: 3
     },
-
-    // 3-character content (existing zones)
     forest: {
         name: "Bloblin Forest",
         level: 1,
         desc: "Sticky enemies. Drops Paste.",
         enemyType: "blob",
-        minParty: 3,
+        minParty: 1,
         maxParty: 3,
         spawnMin: 1,
         spawnMax: 4
@@ -92,19 +85,17 @@ export const MISSIONS = {
         level: 3,
         desc: "Hard enemies. Drops Ore.",
         enemyType: "golem",
-        minParty: 3,
+        minParty: 1,
         maxParty: 3,
         spawnMin: 1,
         spawnMax: 4
     },
-
-    // 4-character content
     ice_cave: {
         name: "Ice Cave of the Southern Pond",
         level: 5,
         desc: "Face 3–5 Ice Imps. Drops Ice Boots with +2 SPD, +1 DEF.",
         enemyType: "ice_imp",
-        minParty: 4,
+        minParty: 1,
         maxParty: 4,
         spawnMin: 3,
         spawnMax: 5
@@ -122,11 +113,11 @@ export const MAX_SMITHING_LEVEL = 10;
 
 export const LEVEL_XP_CURVE = [0, 100, 250, 500, 1000, 2000, 4000, 8000, 15000, 99999];
 
-// Define one standard curve for skills
 export const SKILL_XP_CURVE = [0, 50, 150, 300, 600, 1200, 2500, 5000, 10000, 99999];
 
 export const COOKING_XP_CURVE = SKILL_XP_CURVE;
 export const SMITHING_XP_CURVE = SKILL_XP_CURVE;
 
-export const TAVERN_REFRESH_MS = 4 * 60 * 60 * 1000;
+// Tavern refresh set to 2 hours now
+export const TAVERN_REFRESH_MS = 2 * 60 * 60 * 1000;
 export const NAMES = ["Kael", "Thar", "Olg", "Brim", "Syl", "Vex", "Dorn", "Lira", "Mok", "Zed", "Grom", "Fae", "Urk", "Zil"];
