@@ -227,8 +227,9 @@ export default function App() {
             if (snap.exists()) {
                 const data = snap.data();
                 if (data.active) {
-                    // FIX: If we are already fighting locally, ignore stale DB updates to prevent overwriting local state
-                    if (gameStateRef.current !== 'fighting') {
+                    // FIX v2: STRICTER CHECK. Only start fighting if we are IDLE.
+                    // If we are 'victory' or 'defeat', ignoring this stale update prevents the loop.
+                    if (gameStateRef.current === 'idle') {
                         setEnemies(data.enemies);
                         if (data.troopIds) setSelectedTroops(data.troopIds);
                         setGameState('fighting');
