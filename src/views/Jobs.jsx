@@ -9,8 +9,8 @@ export default function Jobs({ troops, inventory, user, appId }) {
 
     // --- SHARED HELPERS ---
     const stopJob = async (unit) => {
-        await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', unit.uid), { 
-            activity: 'idle', cookingProgress: 0 
+        await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', unit.uid), {
+            activity: 'idle', cookingProgress: 0, smithingProgress: 0
         });
     };
 
@@ -22,10 +22,10 @@ export default function Jobs({ troops, inventory, user, appId }) {
 
     // --- SMITHING LOGIC ---
     const startSmithing = async (unit, recipeId) => {
-        await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', unit.uid), { 
-            activity: 'smithing', 
+        await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', unit.uid), {
+            activity: 'smithing',
             smithingTarget: recipeId,
-            cookingProgress: 0 
+            smithingProgress: 0
         });
     };
 
@@ -33,13 +33,13 @@ export default function Jobs({ troops, inventory, user, appId }) {
         <div className="space-y-4 animate-fade-in">
             {/* Tabs Header */}
             <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700">
-                <button 
+                <button
                     onClick={() => setActiveTab('kitchen')}
                     className={`flex-1 flex items-center justify-center gap-2 py-2 rounded text-sm font-bold transition-all ${activeTab === 'kitchen' ? 'bg-orange-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
                 >
                     <ChefHat size={18} /> Kitchen
                 </button>
-                <button 
+                <button
                     onClick={() => setActiveTab('smithing')}
                     className={`flex-1 flex items-center justify-center gap-2 py-2 rounded text-sm font-bold transition-all ${activeTab === 'smithing' ? 'bg-gray-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
                 >
@@ -50,7 +50,7 @@ export default function Jobs({ troops, inventory, user, appId }) {
             {/* KITCHEN CONTENT */}
             {activeTab === 'kitchen' && (
                 <div className="space-y-4">
-                     <div className="bg-slate-800 p-4 rounded-lg border border-slate-700 flex justify-between items-center">
+                    <div className="bg-slate-800 p-4 rounded-lg border border-slate-700 flex justify-between items-center">
                         <div className="flex items-center gap-3">
                             <div className="w-12 h-12 bg-slate-900 rounded-full flex items-center justify-center border border-slate-600">
                                 <img src="https://api.iconify.design/lucide:flask-conical.svg?color=%2310b981" className="w-6 h-6" alt="Paste" />
@@ -77,7 +77,7 @@ export default function Jobs({ troops, inventory, user, appId }) {
                             const isCooking = t.activity === 'cooking';
                             const hasGloves = t.equipment?.gloves?.name === 'Slimey Gloves';
                             const failChance = Math.max(0, 50 - (((t.cooking?.level || 1) - 1) * 5) - (hasGloves ? 2 : 0));
-                            
+
                             // Hide troops busy with OTHER jobs
                             if (t.activity !== 'idle' && t.activity !== 'cooking') return null;
 
@@ -90,13 +90,13 @@ export default function Jobs({ troops, inventory, user, appId }) {
                                     {isCooking ? (
                                         <div className="flex items-center gap-3">
                                             <div className="w-24 h-2 bg-slate-900 rounded-full overflow-hidden">
-                                                <div className="h-full bg-orange-500 transition-all duration-1000" style={{width: `${t.cookingProgress}%`}}></div>
+                                                <div className="h-full bg-orange-500 transition-all duration-1000" style={{ width: `${t.cookingProgress}%` }}></div>
                                             </div>
-                                            <button onClick={() => toggleCooking(t)} className="text-red-400 hover:text-red-300"><X size={20}/></button>
+                                            <button onClick={() => toggleCooking(t)} className="text-red-400 hover:text-red-300"><X size={20} /></button>
                                         </div>
                                     ) : (
-                                        <button 
-                                            onClick={() => toggleCooking(t)} 
+                                        <button
+                                            onClick={() => toggleCooking(t)}
                                             disabled={inventory.filter(i => i.name === 'Slime Paste').length === 0}
                                             className="bg-slate-700 hover:bg-orange-700 disabled:opacity-30 disabled:hover:bg-slate-700 px-3 py-1 rounded text-xs font-bold transition-colors"
                                         >
@@ -135,14 +135,14 @@ export default function Jobs({ troops, inventory, user, appId }) {
                                 <div key={t.uid} className="bg-slate-900 p-3 rounded border border-slate-700">
                                     <div className="flex justify-between items-center mb-2">
                                         <span className="font-bold text-sm">{t.name} <span className="text-xs font-normal text-slate-500">Lvl {smithLvl}</span></span>
-                                        {isSmithing && <button onClick={() => stopJob(t)}><X size={16} className="text-red-500"/></button>}
+                                        {isSmithing && <button onClick={() => stopJob(t)}><X size={16} className="text-red-500" /></button>}
                                     </div>
-                                    
+
                                     {isSmithing ? (
                                         <div>
                                             <div className="text-xs text-amber-500 mb-1">Forging...</div>
                                             <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                                                <div className="h-full bg-amber-600 transition-all duration-1000" style={{width: `${t.cookingProgress}%`}}></div>
+                                                <div className="h-full bg-amber-600 transition-all duration-1000" style={{ width: `${t.smithingProgress || 0}%` }}></div>
                                             </div>
                                         </div>
                                     ) : (
@@ -151,8 +151,8 @@ export default function Jobs({ troops, inventory, user, appId }) {
                                                 const count = inventory.filter(i => i.name === r.input).length;
                                                 const locked = smithLvl < r.level || count < r.count;
                                                 return (
-                                                    <button 
-                                                        key={r.id} 
+                                                    <button
+                                                        key={r.id}
                                                         onClick={() => startSmithing(t, r.id)}
                                                         disabled={locked}
                                                         className="bg-slate-800 border border-slate-600 px-2 py-1 rounded text-xs whitespace-nowrap disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-700 hover:border-slate-500 transition-colors"

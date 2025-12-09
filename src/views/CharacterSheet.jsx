@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, UserMinus, Heart, Sword, Shield, Zap, Utensils, Scroll, Skull, Hand, Shirt, Footprints } from 'lucide-react';
+import { ChevronRight, UserMinus, Heart, Sword, Shield, Zap, Utensils, Scroll, Skull, Hand, Shirt, Footprints, Hammer } from 'lucide-react';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { getEffectiveStats } from '../utils/mechanics';
-import { LEVEL_XP_CURVE, COOKING_XP_CURVE } from '../config/gameData';
+import { LEVEL_XP_CURVE, COOKING_XP_CURVE, SMITHING_XP_CURVE } from '../config/gameData';
 import ProgressBar from '../components/ui/ProgressBar';
 
 export default function CharacterSheet({ user, unit, inventory, setView, appId }) {
@@ -43,10 +43,10 @@ export default function CharacterSheet({ user, unit, inventory, setView, appId }
         if (item.type === 'gloves') slot = 'gloves';
         if (item.type === 'cape') slot = 'cape';
         if (item.type === 'boots') slot = 'boots';
-        
+
         let newInv = inventory.filter(i => i.id !== item.id);
         if (unit.equipment?.[slot]) newInv.push(unit.equipment[slot]);
-        
+
         await Promise.all([
             updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', unit.uid), { [`equipment.${slot}`]: item }),
             updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), { inventory: newInv })
@@ -139,7 +139,7 @@ export default function CharacterSheet({ user, unit, inventory, setView, appId }
                                 Rename
                             </button>
                             <button onClick={dismissUnit} className="text-red-500 hover:text-red-400 text-xs flex items-center gap-1">
-                                <UserMinus size={12}/> Dismiss
+                                <UserMinus size={12} /> Dismiss
                             </button>
                         </>
                     )}
@@ -151,7 +151,7 @@ export default function CharacterSheet({ user, unit, inventory, setView, appId }
                 <div className="p-4 bg-slate-900/50 border-b border-slate-700">
                     <h2 className="text-2xl font-bold text-white">{nameOverrideUid === unit.uid && nameOverride ? nameOverride : unit.name}</h2>
                     <p className="text-slate-400 text-sm">{unit.race} {unit.class}</p>
-                    
+
                     {/* XP Bars */}
                     <div className="space-y-2 mt-4">
                         <div>
@@ -163,10 +163,17 @@ export default function CharacterSheet({ user, unit, inventory, setView, appId }
                         </div>
                         <div>
                             <div className="flex justify-between text-xs mb-1">
-                                <span className="text-orange-400 font-bold flex items-center gap-1"><Utensils size={10}/> Cooking Lvl {unit.cooking?.level || 1}</span>
+                                <span className="text-orange-400 font-bold flex items-center gap-1"><Utensils size={10} /> Cooking Lvl {unit.cooking?.level || 1}</span>
                                 <span className="text-slate-500">{unit.cooking?.xp || 0} / {COOKING_XP_CURVE[unit.cooking?.level || 1]} XP</span>
                             </div>
                             <ProgressBar current={unit.cooking?.xp || 0} max={COOKING_XP_CURVE[unit.cooking?.level || 1]} color="bg-orange-500" />
+                        </div>
+                        <div>
+                            <div className="flex justify-between text-xs mb-1">
+                                <span className="text-slate-400 font-bold flex items-center gap-1"><Hammer size={10} /> Smithing Lvl {unit.smithing?.level || 1}</span>
+                                <span className="text-slate-500">{unit.smithing?.xp || 0} / {SMITHING_XP_CURVE[unit.smithing?.level || 1]} XP</span>
+                            </div>
+                            <ProgressBar current={unit.smithing?.xp || 0} max={SMITHING_XP_CURVE[unit.smithing?.level || 1]} color="bg-slate-500" />
                         </div>
                     </div>
                 </div>
@@ -181,14 +188,14 @@ export default function CharacterSheet({ user, unit, inventory, setView, appId }
 
             {/* Equipment */}
             <div className="bg-slate-800 rounded-lg border border-slate-700 p-4">
-                <h3 className="font-bold text-slate-300 mb-4 flex items-center gap-2"><Shirt size={16}/> Equipment</h3>
+                <h3 className="font-bold text-slate-300 mb-4 flex items-center gap-2"><Shirt size={16} /> Equipment</h3>
                 <div className="grid grid-cols-4 gap-2">
                     {[
-                        { slot: 'mainHand', icon: <Sword size={16}/> },
-                        { slot: 'gloves', icon: <Hand size={16}/> },
-                        { slot: 'cape', icon: <Shirt size={16}/> },
-                        { slot: 'boots', icon: <Footprints size={16}/> }
-                    ].map(({slot, icon}) => {
+                        { slot: 'mainHand', icon: <Sword size={16} /> },
+                        { slot: 'gloves', icon: <Hand size={16} /> },
+                        { slot: 'cape', icon: <Shirt size={16} /> },
+                        { slot: 'boots', icon: <Footprints size={16} /> }
+                    ].map(({ slot, icon }) => {
                         const item = unit.equipment?.[slot];
                         return (
                             <div key={slot} className="aspect-square bg-slate-900 border border-slate-600 rounded flex flex-col items-center justify-center relative group">
@@ -197,7 +204,7 @@ export default function CharacterSheet({ user, unit, inventory, setView, appId }
                         );
                     })}
                 </div>
-                
+
                 {/* Inventory List */}
                 <div className="mt-4">
                     <div className="text-xs text-slate-500 mb-2 uppercase">Inventory</div>
@@ -215,7 +222,7 @@ export default function CharacterSheet({ user, unit, inventory, setView, appId }
 
             {/* Service Record */}
             <div className="bg-slate-800 rounded-lg border border-slate-700 p-4">
-                <h3 className="font-bold text-slate-300 mb-4 flex items-center gap-2"><Scroll size={16}/> Service Record</h3>
+                <h3 className="font-bold text-slate-300 mb-4 flex items-center gap-2"><Scroll size={16} /> Service Record</h3>
                 <div className="grid grid-cols-3 gap-2 text-center">
                     <div className="bg-slate-900 p-2 rounded border border-slate-700">
                         <div className="text-lg font-bold text-white">{unit.lore?.missionsWon || 0}</div>
@@ -223,7 +230,7 @@ export default function CharacterSheet({ user, unit, inventory, setView, appId }
                     </div>
                     <div className="bg-slate-900 p-2 rounded border border-slate-700">
                         <div className="text-lg font-bold text-red-400">{unit.lore?.kills || 0}</div>
-                        <div className="text-[10px] text-slate-500 uppercase flex items-center justify-center gap-1"><Skull size={10}/> Kills</div>
+                        <div className="text-[10px] text-slate-500 uppercase flex items-center justify-center gap-1"><Skull size={10} /> Kills</div>
                     </div>
                     <div className="bg-slate-900 p-2 rounded border border-slate-700">
                         <div className="text-lg font-bold text-amber-500">{unit.lore?.closeCalls || 0}</div>

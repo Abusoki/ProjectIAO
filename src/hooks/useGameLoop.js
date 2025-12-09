@@ -17,7 +17,7 @@ export function useGameLoop(user, troops, inventory, gameState) {
                     if (t.currentHp < stats.maxHp) {
                         updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', t.uid), {
                             currentHp: Math.min(stats.maxHp, t.currentHp + 1)
-                        }).catch(()=>{});
+                        }).catch(() => { });
                     }
                 }
             });
@@ -51,13 +51,13 @@ export function useGameLoop(user, troops, inventory, gameState) {
                         if (isSuccess) newInv.push({ id: generateId(), name: "Slime Bread", type: "food", desc: "Restores 10 HP", value: 10 });
 
                         await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'profile', 'data'), { inventory: newInv });
-                        
+
                         let newXp = (crafter.cooking?.xp || 0) + 10;
                         let newLvl = lvl;
                         if (newXp >= SKILL_XP_CURVE[newLvl] && newLvl < MAX_COOKING_LEVEL) newLvl++;
 
-                        await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', crafter.uid), { 
-                            cookingProgress: 0, "cooking.xp": newXp, "cooking.level": newLvl 
+                        await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', crafter.uid), {
+                            cookingProgress: 0, "cooking.xp": newXp, "cooking.level": newLvl
                         });
                     } else {
                         await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', crafter.uid), { cookingProgress: newProgress });
@@ -66,23 +66,23 @@ export function useGameLoop(user, troops, inventory, gameState) {
 
                 // --- SMITHING LOGIC ---
                 if (crafter.activity === 'smithing') {
-                    const recipeId = crafter.smithingTarget; 
+                    const recipeId = crafter.smithingTarget;
                     const recipe = SMITHING_RECIPES.find(r => r.id === recipeId);
-                    
+
                     const ingredients = inventory.filter(i => i.name === recipe.input);
                     if (ingredients.length < recipe.count) {
-                        await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', crafter.uid), { activity: 'idle', cookingProgress: 0 });
+                        await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', crafter.uid), { activity: 'idle', smithingProgress: 0 });
                         continue;
                     }
 
                     const percentPerTick = 100 / (recipe.time / 10);
-                    let newProgress = (crafter.cookingProgress || 0) + percentPerTick;
-                    
-                    if (newProgress >= 100) { 
+                    let newProgress = (crafter.smithingProgress || 0) + percentPerTick;
+
+                    if (newProgress >= 100) {
                         let newInv = [...inventory];
-                        for(let k=0; k<recipe.count; k++) {
+                        for (let k = 0; k < recipe.count; k++) {
                             const idx = newInv.findIndex(i => i.name === recipe.input);
-                            if(idx > -1) newInv.splice(idx, 1);
+                            if (idx > -1) newInv.splice(idx, 1);
                         }
 
                         if (recipe.id === 'iron_bar') newInv.push({ id: generateId(), name: "Iron Bar", type: "resource" });
@@ -90,17 +90,17 @@ export function useGameLoop(user, troops, inventory, gameState) {
 
                         await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'profile', 'data'), { inventory: newInv });
 
-                         let newXp = (crafter.smithing?.xp || 0) + recipe.xp;
-                         let newLvl = crafter.smithing?.level || 1;
-                         if (newXp >= SKILL_XP_CURVE[newLvl]) newLvl++;
- 
-                         await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', crafter.uid), { 
-                             cookingProgress: 0, "smithing.xp": newXp, "smithing.level": newLvl 
-                         });
+                        let newXp = (crafter.smithing?.xp || 0) + recipe.xp;
+                        let newLvl = crafter.smithing?.level || 1;
+                        if (newXp >= SKILL_XP_CURVE[newLvl]) newLvl++;
+
+                        await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', crafter.uid), {
+                            smithingProgress: 0, "smithing.xp": newXp, "smithing.level": newLvl
+                        });
 
                     } else {
-                        await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', crafter.uid), { 
-                            cookingProgress: newProgress 
+                        await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', crafter.uid), {
+                            smithingProgress: newProgress
                         });
                     }
                 }
