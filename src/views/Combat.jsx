@@ -5,7 +5,7 @@ import ProgressBar from '../components/ui/ProgressBar';
 import DamageOverlay from '../components/DamageOverlay';
 
 export default function Combat({ troops, enemies, gameState, setGameState, setView, autoBattle, setAutoBattle, combatLog, damageEvents }) {
-    
+
     return (
         <div className="h-full flex flex-col relative">
             {/* Visual Effects Overlay */}
@@ -16,21 +16,21 @@ export default function Combat({ troops, enemies, gameState, setGameState, setVi
                 <span className={`text-xs font-bold px-3 py-1 rounded-full border ${gameState === 'fighting' ? 'bg-red-900/50 text-red-200 border-red-800 animate-pulse' : 'bg-green-900/50 text-green-200 border-green-800'}`}>
                     {gameState === 'fighting' ? 'COMBAT ACTIVE' : gameState.toUpperCase()}
                 </span>
-                
+
                 {gameState !== 'fighting' ? (
-                    <button 
-                        onClick={() => { 
-                            setGameState('idle'); 
+                    <button
+                        onClick={() => {
+                            setGameState('idle');
                             setView('mission_select');
                             setAutoBattle(false);
-                        }} 
+                        }}
                         className="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-xs font-bold text-white border border-slate-500"
                     >
                         Leave Battlefield
                     </button>
                 ) : (
-                    <button 
-                        onClick={() => setAutoBattle(!autoBattle)} 
+                    <button
+                        onClick={() => setAutoBattle(!autoBattle)}
                         className={`text-xs font-bold px-3 py-1 rounded border flex items-center gap-1 transition-all ${autoBattle ? 'bg-amber-600 border-amber-500 text-white animate-pulse' : 'bg-slate-800 border-slate-600 text-slate-400'}`}
                     >
                         <Repeat size={12} /> Auto: {autoBattle ? 'ON' : 'OFF'}
@@ -48,16 +48,16 @@ export default function Combat({ troops, enemies, gameState, setGameState, setVi
                                 <span className="font-bold text-sm truncate">{u.name}</span>
                                 <span className="text-xs">{u.currentHp}</span>
                             </div>
-                            
+
                             {/* HP Bar */}
-                            <ProgressBar 
-                                current={u.currentHp} 
-                                max={getEffectiveStats(u).maxHp} 
-                                color={u.currentHp < getEffectiveStats(u).maxHp * 0.3 ? "bg-red-500" : "bg-green-500"} 
+                            <ProgressBar
+                                current={u.currentHp}
+                                max={getEffectiveStats(u).maxHp}
+                                color={u.currentHp < getEffectiveStats(u).maxHp * 0.3 ? "bg-red-500" : "bg-green-500"}
                             />
-                            
+
                             {/* Action Gauge */}
-                            <div className="absolute bottom-0 left-0 h-0.5 bg-amber-400 transition-all duration-300" style={{ width: `${Math.min(100, u.actionGauge || 0)}%`}} />
+                            <div className="absolute bottom-0 left-0 h-0.5 bg-amber-400 transition-all duration-300" style={{ width: `${Math.min(100, u.actionGauge || 0)}%` }} />
                         </div>
                     ))}
                 </div>
@@ -70,12 +70,12 @@ export default function Combat({ troops, enemies, gameState, setGameState, setVi
                                 <span className="font-bold text-sm text-red-300 truncate">{e.name}</span>
                                 <span className="text-xs text-red-400">{e.currentHp}</span>
                             </div>
-                            
+
                             {/* Enemy HP */}
                             <ProgressBar current={e.currentHp} max={e.maxHp} color="bg-red-500" />
-                            
+
                             {/* Enemy Action Gauge */}
-                            <div className="absolute bottom-0 right-0 h-0.5 bg-red-500 transition-all duration-300" style={{ width: `${Math.min(100, e.actionGauge || 0)}%`}} />
+                            <div className="absolute bottom-0 right-0 h-0.5 bg-red-500 transition-all duration-300" style={{ width: `${Math.min(100, e.actionGauge || 0)}%` }} />
                         </div>
                     ))}
                 </div>
@@ -89,15 +89,33 @@ export default function Combat({ troops, enemies, gameState, setGameState, setVi
                     </div>
                 ))}
             </div>
-            
-            {/* Auto Battle Status Footer */}
+
+            {/* End of Battle Overlay */}
             {gameState !== 'fighting' && (
-                <div className="mt-4 flex flex-col gap-2">
-                    {gameState === 'victory' && autoBattle && (
-                        <div className="text-center text-xs text-amber-400 animate-pulse mb-1">
-                            Next battle starting soon...
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-20 flex flex-col items-center justify-center p-6 animate-fade-in">
+                    <h2 className={`text-4xl font-extrabold mb-4 tracking-widest ${gameState === 'victory' ? 'text-amber-400 drop-shadow-glow' : 'text-red-600'}`}>
+                        {gameState.toUpperCase()}
+                    </h2>
+
+                    {gameState === 'victory' && (
+                        <div className="text-center mb-6">
+                            <div className="text-slate-300 mb-2">Battle Complete</div>
+                            {autoBattle && <div className="text-xs text-amber-500 animate-pulse">Auto-battle: Finding next target...</div>}
                         </div>
                     )}
+
+                    <div className="flex gap-4">
+                        <button
+                            onClick={() => {
+                                setGameState('idle');
+                                setView('mission_select');
+                                setAutoBattle(false);
+                            }}
+                            className="bg-slate-700 hover:bg-slate-600 px-6 py-2 rounded font-bold text-white border border-slate-500 shadow-lg"
+                        >
+                            Return to Base
+                        </button>
+                    </div>
                 </div>
             )}
         </div>

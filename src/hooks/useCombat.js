@@ -8,9 +8,9 @@ import { generateId } from '../utils/helpers';
 
 export function useCombat(user, troops, enemies, gameState, setGameState, setEnemies, setView, selectedTroops, inventory, autoBattle, setAutoBattle) {
     const [combatLog, setCombatLog] = useState([]);
-    const [damageEvents, setDamageEvents] = useState([]); 
+    const [damageEvents, setDamageEvents] = useState([]);
     const processingResult = useRef(false);
-    
+
     const inventoryRef = useRef(inventory);
     useEffect(() => { inventoryRef.current = inventory; }, [inventory]);
 
@@ -44,7 +44,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             processingResult.current = false;
             return;
         }
-        
+
         const interval = setInterval(() => {
             if (processingResult.current) return;
 
@@ -53,7 +53,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             let battleOver = false;
             // Collect dirty troops in-memory; we will flush to DB only when needed
             let dirtyTroops = new Map();
-            
+
             const fighters = troops.filter(t => t.inCombat);
             if (fighters.length === 0 && enemies.length > 0) return;
 
@@ -77,12 +77,12 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             });
 
             const actors = [...fighters, ...enemies].filter(u => u.currentHp > 0 && u.actionGauge >= 100).sort((a, b) => b.actionGauge - a.actionGauge);
-            
+
             actors.forEach(actor => {
                 if (battleOver || actor.currentHp <= 0) return;
                 actor.actionGauge -= 100;
                 const isPlayer = !!actor.uid;
-                
+
                 // When a flicker actor acts, consume one flicker charge
                 if (actor.skills?.row1 === 'elvish_flicker' && actor._elvishFlickerRemaining > 0) {
                     actor._elvishFlickerRemaining = Math.max(0, (actor._elvishFlickerRemaining || 0) - 1);
@@ -91,7 +91,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                 const targets = isPlayer ? enemies.filter(e => e.currentHp > 0) : fighters.filter(t => t.currentHp > 0);
                 if (targets.length === 0) { battleOver = true; return; }
                 const target = targets[Math.floor(Math.random() * targets.length)];
-                
+
                 let dmgMod = 1.0;
                 if (isPlayer && actor.skills?.row1 === 'oil_concentrated') {
                     actor.combatAttackCount = (actor.combatAttackCount || 0) + 1;
@@ -100,7 +100,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
 
                 const stats = isPlayer ? getEffectiveStats(actor) : actor;
                 const targetStats = isPlayer ? target : getEffectiveStats(target);
-                
+
                 let rawDmg = (stats.ap * dmgMod * (0.8 + Math.random() * 0.4)) - (targetStats.def || 0);
                 let finalDmg = Math.max(1, Math.floor(rawDmg));
 
@@ -135,7 +135,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                         if (isPlayer) actor.battleKills = (actor.battleKills || 0) + 1;
                     }
                 }
-                
+
                 // Mark players/targets as dirty for potential DB write
                 if (isPlayer) dirtyTroops.set(actor.uid, {
                     uid: actor.uid,
@@ -158,9 +158,9 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             });
 
             // Apply local state updates for UI immediately
-            setEnemies([...enemies]); 
+            setEnemies([...enemies]);
             if (logUpdates.length > 0) setCombatLog(prev => [...prev, ...logUpdates].slice(-8));
-            
+
             // Throttle writes: only attempt to write every WRITE_INTERVAL_TICKS intervals.
             writeTickCounter.current = (writeTickCounter.current + 1) % WRITE_INTERVAL_TICKS;
             const shouldFlushWrites = writeTickCounter.current === 0;
@@ -175,7 +175,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
 
                 // 1) Conditionally update combat doc only if changed
                 if (lastSentCombatRef.current !== combatSnapshot) {
-                    batch.update(combatRef, { enemies: enemies, active: !battleOver }).catch(()=>{});
+                    batch.update(combatRef, { enemies: enemies, active: !battleOver }).catch(() => { });
                     // Note: writeBatch doesn't return Promise for update calls here; we'll commit below.
                     batchOps++;
                     lastSentCombatRef.current = combatSnapshot;
@@ -221,7 +221,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             // End-of-battle handling:
             const aliveTroops = fighters.filter(t => t.currentHp > 0);
             const aliveEnemies = enemies.filter(e => e.currentHp > 0);
-            
+
             if (battleOver || aliveTroops.length === 0 || aliveEnemies.length === 0) {
                 if (!processingResult.current) {
                     processingResult.current = true;
@@ -234,15 +234,16 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
     }, [gameState, enemies, troops, user]);
 
     const handleVictory = async (survivors) => {
+        setCombatLog(prev => [...prev, "🏆 VICTORY! Processing rewards..."]);
         setGameState('victory');
         setCombatLog(prev => [...prev, "VICTORY! Checking for loot..."]);
         const xpGain = 20;
-        
+
         let newInv = [...inventoryRef.current];
-        
+
         let dropChance = 0.1;
         const hasGloves = survivors.some(t => t.equipment?.gloves?.name === 'Slimey Gloves');
-        if (hasGloves) dropChance *= 2; 
+        if (hasGloves) dropChance *= 2;
 
         // Determine enemy type by id or name
         const leadEnemy = enemies[0];
@@ -283,10 +284,10 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                     if (newLevel < 10 && newXp >= LEVEL_XP_CURVE[newLevel]) newLevel++;
                     const effectiveStats = getEffectiveStats({ ...unit, level: newLevel }, unit.equipment ? Object.values(unit.equipment) : []);
                     const isCloseCall = (unit.currentHp / effectiveStats.maxHp) <= 0.05;
-                    const newLore = { 
-                        missionsWon: (unit.lore?.missionsWon || 0) + 1, 
-                        kills: (unit.lore?.kills || 0) + (unit.battleKills || 0), 
-                        closeCalls: (unit.lore?.closeCalls || 0) + (isCloseCall ? 1 : 0) 
+                    const newLore = {
+                        missionsWon: (unit.lore?.missionsWon || 0) + 1,
+                        kills: (unit.lore?.kills || 0) + (unit.battleKills || 0),
+                        closeCalls: (unit.lore?.closeCalls || 0) + (isCloseCall ? 1 : 0)
                     };
                     batch.update(ref, { xp: newXp, level: newLevel, lore: newLore, inCombat: false, actionGauge: 0 });
                 }
@@ -330,7 +331,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             await batch.commit();
         } catch (e) {
             console.error('Batched defeat commit failed', e);
-            await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combat'), { active: false }).catch(()=>{});
+            await updateDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combat'), { active: false }).catch(() => { });
             await Promise.all(party.map(u => deleteDoc(doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', u.uid))));
         }
         await cleanupInCombatFlags();
