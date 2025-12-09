@@ -3,13 +3,14 @@ import { Shield, Backpack, LogOut, MoreVertical, Info, GitCommit } from 'lucide-
 import { signOut } from 'firebase/auth';
 import { auth } from '../config/firebase';
 
-export default function Header({ playerLevel, gold, inventoryCount, setView }) {
+export default function Header({ playerLevel, gold, inventoryCount, setView, userCount }) {
     const [showMenu, setShowMenu] = useState(false);
     return (
         <header className="bg-slate-800 border-b border-slate-700 p-3 sticky top-0 z-20 flex justify-between items-center shadow-md shrink-0">
             <div className="flex items-center gap-2 text-amber-500">
                 <Shield className="fill-current w-5 h-5" />
                 <span className="font-bold tracking-wider">IRON & OIL</span>
+                {userCount > 0 && <span className="ml-2 text-xs text-slate-500 font-mono">({userCount} active)</span>}
             </div>
             <div className="flex gap-4 items-center text-sm font-mono">
                 <span className="text-slate-400 text-xs">Lvl {playerLevel}</span>

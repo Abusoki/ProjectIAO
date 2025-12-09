@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, doc, onSnapshot, getDoc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, getDoc, setDoc, deleteDoc, updateDoc, getCountFromServer } from 'firebase/firestore';
 import { auth, db } from './config/firebase';
 import { generateRecruit } from './utils/mechanics';
 import { TAVERN_REFRESH_MS, MISSIONS } from './config/gameData';
@@ -41,6 +41,7 @@ export default function App() {
     const [tavernState, setTavernState] = useState({ recruits: [], nextRefresh: 0 });
     const [selectedUnitId, setSelectedUnitId] = useState(null);
     const [profileUid, setProfileUid] = useState(null);
+    const [userCount, setUserCount] = useState(0);
 
     // Combat State
     const [gameState, setGameState] = useState('idle');
@@ -244,6 +245,12 @@ export default function App() {
         return () => { unsubTroops(); unsubProfile(); unsubTavern(); unsubBattle(); clearInterval(heartbeat); };
     }, [user]);
 
+    useEffect(() => {
+        getCountFromServer(collection(db, 'artifacts', appId, 'users')).then(snap => {
+            setUserCount(snap.data().count);
+        }).catch(err => console.error("Failed to get user count", err));
+    }, []);
+
 
     if (!user) return <AuthScreen />;
 
@@ -251,7 +258,7 @@ export default function App() {
 
     return (
         <div className="h-full w-full bg-slate-900 text-slate-100 font-sans selection:bg-amber-900 pb-20 overflow-y-auto">
-            <Header playerLevel={playerLevel} gold={gold} inventoryCount={inventory.length} />
+            <Header playerLevel={playerLevel} gold={gold} inventoryCount={inventory.length} setView={setView} userCount={userCount} />
 
             {showNameModal && (
                 <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
