@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { getEffectiveStats } from '../utils/mechanics';
