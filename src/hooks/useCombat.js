@@ -4,7 +4,7 @@ import { doc, updateDoc, setDoc, deleteDoc, collection, query, where, getDocs, w
 import { db } from '../config/firebase';
 import { getEffectiveStats } from '../utils/mechanics';
 import { LEVEL_XP_CURVE, DROPS, ENEMY_DROPS } from '../config/gameData';
-import { generateId } from '../utils/helpers';
+import { generateId, randomInt } from '../utils/helpers';
 
 export function useCombat(user, troops, enemies, gameState, setGameState, setEnemies, setView, selectedTroops, inventory, autoBattle, setAutoBattle, setTroops) {
     const [combatLog, setCombatLog] = useState([]);
@@ -302,10 +302,16 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                     if (Math.random() < (dropRef.chance || 0)) {
                         const def = itemLookup[dropRef.id];
                         if (!def) continue;
-                        const newItem = { id: generateId(), ...def };
-                        newInv.push(newItem);
-                        collectedLoot.push(newItem);
-                        setCombatLog(prev => [...prev, `+ ${def.name}`]);
+
+                        const qty = (dropRef.min && dropRef.max) ? randomInt(dropRef.min, dropRef.max) : 1;
+
+                        for (let i = 0; i < qty; i++) {
+                            const newItem = { id: generateId(), ...def };
+                            newInv.push(newItem);
+                            collectedLoot.push(newItem);
+                        }
+
+                        setCombatLog(prev => [...prev, `+ ${qty > 1 ? qty + 'x ' : ''}${def.name}`]);
                     }
                 } catch (e) { console.error('Drop roll failed', e); }
             }
