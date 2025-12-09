@@ -9,6 +9,7 @@ import { generateId } from '../utils/helpers';
 export function useCombat(user, troops, enemies, gameState, setGameState, setEnemies, setView, selectedTroops, inventory, autoBattle, setAutoBattle, setTroops) {
     const [combatLog, setCombatLog] = useState([]);
     const [damageEvents, setDamageEvents] = useState([]);
+    const [currentLoot, setCurrentLoot] = useState([]);
     const processingResult = useRef(false);
 
     // REFACTOR: Use Refs for combat state to prevent dependency cycles
@@ -270,6 +271,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             const xpGain = 20;
             let newInv = [...inventoryRef.current];
             let dropChance = 0.1;
+            let collectedLoot = [];
 
             if (survivors && survivors.length > 0) {
                 const hasGloves = survivors.some(t => t.equipment?.gloves?.name === 'Slimey Gloves');
@@ -292,7 +294,9 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                     if (Math.random() < (dropRef.chance || 0)) {
                         const def = itemLookup[dropRef.id];
                         if (!def) continue;
-                        newInv.push({ id: generateId(), ...def });
+                        const newItem = { id: generateId(), ...def };
+                        newInv.push(newItem);
+                        collectedLoot.push(newItem);
                         setCombatLog(prev => [...prev, `+ ${def.name}`]);
                     }
                 } catch (e) { console.error('Drop roll failed', e); }
@@ -302,10 +306,14 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             if (pool.length === 0) {
                 if (Math.random() < dropChance) {
                     const fallbackItem = itemLookup.slime_paste || { id: generateId(), name: 'Slime Paste', type: 'resource', desc: 'Sticky.' };
-                    newInv.push({ id: generateId(), ...fallbackItem });
+                    const newItem = { id: generateId(), ...fallbackItem };
+                    newInv.push(newItem);
+                    collectedLoot.push(newItem);
                     setCombatLog(prev => [...prev, `+ ${fallbackItem.name}`]);
                 }
             }
+
+            setCurrentLoot(collectedLoot);
 
             // Database Updates
             const batch = writeBatch(db);
@@ -352,7 +360,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                     outcome: 'victory',
                     missionKey: null,
                     survivors: survivors.map(u => ({ uid: u.uid, name: u.name })),
-                    loot: newInv.filter(i => i.id.startsWith('drop_')), // Approximation
+                    loot: collectedLoot,
                     log: combatLog.slice(-20)
                 };
                 // Fire-and-forget result log
@@ -388,5 +396,5 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
         await cleanupInCombatFlags();
     };
 
-    return { combatLog, setCombatLog, damageEvents };
+    return { combatLog, setCombatLog, damageEvents, currentLoot };
 }

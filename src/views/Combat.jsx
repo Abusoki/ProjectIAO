@@ -1,10 +1,10 @@
 import React from 'react';
-import { Repeat } from 'lucide-react';
+import { Repeat, Gift } from 'lucide-react';
 import { getEffectiveStats } from '../utils/mechanics';
 import ProgressBar from '../components/ui/ProgressBar';
 import DamageOverlay from '../components/DamageOverlay';
 
-export default function Combat({ troops, enemies, gameState, setGameState, setView, autoBattle, setAutoBattle, combatLog, damageEvents }) {
+export default function Combat({ troops, enemies, gameState, setGameState, setView, autoBattle, setAutoBattle, combatLog, damageEvents, currentLoot }) {
 
     return (
         <div className="h-full flex flex-col relative">
@@ -101,6 +101,22 @@ export default function Combat({ troops, enemies, gameState, setGameState, setVi
                         <div className="text-center mb-6">
                             <div className="text-slate-300 mb-2">Battle Complete</div>
                             {autoBattle && <div className="text-xs text-amber-500 animate-pulse">Auto-battle: Finding next target...</div>}
+                        </div>
+                    )}
+
+                    {gameState === 'victory' && currentLoot && currentLoot.length > 0 && (
+                        <div className="mb-6 w-full max-w-xs bg-slate-800/80 p-3 rounded border border-slate-700">
+                            <div className="text-sm font-bold text-amber-500 mb-2 flex items-center justify-center gap-2">
+                                <Gift size={16} /> Loot Discovered
+                            </div>
+                            <div className="space-y-1">
+                                {currentLoot.map((item, i) => (
+                                    <div key={i} className="text-xs text-slate-200 flex justify-between items-center bg-black/20 p-2 rounded">
+                                        <span>{item.name}</span>
+                                        <span className="text-slate-500 italic ml-2">{item.type}</span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
 

@@ -85,7 +85,7 @@ export default function App() {
     // --- Hooks Logic ---
     useGameLoop(user, troops, inventory, gameState, profile);
 
-    const { combatLog, setCombatLog, damageEvents } = useCombat(
+    const { combatLog, setCombatLog, damageEvents, currentLoot } = useCombat(
         user, troops, enemies, gameState, handleGameStateChange, setEnemies, setView, selectedTroops, inventory, autoBattle, setAutoBattle, setTroops
     );
 
@@ -328,6 +328,7 @@ export default function App() {
                     setAutoBattle={setAutoBattle}
                     combatLog={combatLog}
                     damageEvents={damageEvents}
+                    currentLoot={currentLoot}
                 />}
 
                 {view === 'jobs' && <Jobs troops={troops} inventory={inventory} user={user} appId={appId} />}
