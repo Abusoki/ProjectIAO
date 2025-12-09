@@ -107,6 +107,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             // FAILSAFE: Check victory condition BEFORE acting. 
             // If all enemies are dead, stop immediately.
             if (currentEnemies.every(e => e.currentHp <= 0)) {
+                console.log("FAILSAFE: All enemies dead. Forcing battleOver.");
                 battleOver = true;
             } else {
 
@@ -236,10 +237,14 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             const aliveEnemies = currentEnemies.filter(e => e.currentHp > 0);
 
             if (battleOver || aliveTroops.length === 0 || aliveEnemies.length === 0) {
+                console.log(`Battle Ending. Over:${battleOver} Troops:${aliveTroops.length} Enemies:${aliveEnemies.length}`);
                 if (!processingResult.current) {
+                    console.log("Triggering HandleVictory/Defeat");
                     processingResult.current = true;
                     if (aliveTroops.length === 0) handleDefeat(fighters);
                     else handleVictory(fighters);
+                } else {
+                    console.log("Already processing result.");
                 }
             }
         }, 800);
