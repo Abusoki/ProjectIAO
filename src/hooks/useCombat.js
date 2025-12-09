@@ -278,7 +278,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
 
             // Determine enemy type by id or name
             const leadEnemy = enemies[0];
-            const enemyType = (leadEnemy?.id || '').split('_')[0] || (leadEnemy?.name || '').toLowerCase();
+            const enemyType = (leadEnemy?.type) || (leadEnemy?.id || '').split('_')[0] || (leadEnemy?.name || '').toLowerCase();
 
             // Safe Access to Drops
             const dropsLookup = ENEMY_DROPS || {};
