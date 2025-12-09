@@ -245,9 +245,9 @@ export default function App() {
                 const data = snap.data();
                 if (data.active) {
                     console.log("COMBAT LISTENER: Active=true. GameStateRef:", gameStateRef.current);
-                    // FIX v2: STRICTER CHECK. Only start fighting if we are IDLE.
-                    // If we are 'victory' or 'defeat', ignoring this stale update prevents the loop.
-                    if (gameStateRef.current === 'idle') {
+                    // FIX v2: STRICTER CHECK. Only start fighting if we are IDLE or VICTORY.
+                    // Allowing 'victory' lets Auto-Battle restart the loop.
+                    if (gameStateRef.current === 'idle' || gameStateRef.current === 'victory') {
                         setEnemies(data.enemies);
                         if (data.troopIds) {
                             setSelectedTroops(data.troopIds);
