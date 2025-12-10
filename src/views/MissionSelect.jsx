@@ -63,7 +63,7 @@ export default function MissionSelect({ troops, selectedTroops, setSelectedTroop
 
     // small squad selector UI (allow up to MAX_SELECT)
     const SquadList = () => (
-        <div className="grid gap-2 mb-6">
+        <div className="grid grid-cols-4 gap-2 mb-6">
             {troops.map(t => {
                 const isSelected = selectedTroops.includes(t.uid);
                 const busy = t.activity === 'cooking' || t.activity === 'smithing' || t.inCombat;
@@ -72,13 +72,11 @@ export default function MissionSelect({ troops, selectedTroops, setSelectedTroop
                         key={t.uid}
                         disabled={busy}
                         onClick={() => toggleSelect(t)}
-                        className={`p-3 rounded-lg border flex justify-between items-center ${isSelected ? 'bg-amber-900/40 border-amber-600' : 'bg-slate-800 border-slate-700'} ${busy ? 'opacity-50' : ''}`}
+                        className={`p-2 rounded-lg border flex flex-col items-center justify-center text-center gap-1 h-20 transition-all ${isSelected ? 'bg-amber-900/40 border-amber-600 ring-1 ring-amber-500 shadow-lg' : 'bg-slate-800 border-slate-700 hover:bg-slate-700'} ${busy ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:scale-105 active:scale-95'}`}
                     >
-                        <div className="text-left">
-                            <div className="font-bold">{t.name}</div>
-                            <div className="text-xs text-slate-500">{busy ? 'Busy' : `${t.race} ${t.class}`}</div>
-                        </div>
-                        {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
+                        <div className="font-bold text-xs truncate w-full px-1">{t.name}</div>
+                        <div className="text-[10px] text-slate-500 truncate w-full px-1">{busy ? 'Busy' : `${t.race} ${t.class}`}</div>
+                        {isSelected && <div className="w-1.5 h-1.5 bg-amber-400 rounded-full shadow-[0_0_8px_rgba(251,191,36,0.8)]" />}
                     </button>
                 );
             })}
@@ -116,11 +114,11 @@ export default function MissionSelect({ troops, selectedTroops, setSelectedTroop
             <SquadList />
 
             <div className="space-y-3">
-                {[1,2,3,4].map(size => (
+                {[1, 2, 3, 4].map(size => (
                     <div key={size} className="space-y-2">
                         <CategoryHeader size={size} />
                         {openCategory === size && (
-                            <div className="grid gap-2">
+                            <div className="grid grid-cols-2 gap-2">
                                 {missionsForMax(size).length === 0 ? (
                                     <div className="text-sm text-slate-500 p-3 bg-slate-800 rounded border border-slate-700">No missions in this category.</div>
                                 ) : (
