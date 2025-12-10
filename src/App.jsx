@@ -133,25 +133,26 @@ export default function App() {
             const maxSpawn = mission.spawnMax || Math.max(1, Math.floor(Math.random() * 4) + 1);
             const enemyCount = Math.floor(Math.random() * (maxSpawn - minSpawn + 1)) + minSpawn;
 
+            const battleId = Date.now();
             const newEnemies = Array.from({ length: enemyCount }, (_, i) => {
                 const mk = mission.enemyType;
                 if (mk === 'golem') {
-                    return { type: mk, id: `golem_${i}`, name: `Rock Golem ${i + 1}`, maxHp: 80, currentHp: 80, ap: 15, def: 5, spd: 4, actionGauge: Math.random() * 20 };
+                    return { type: mk, id: `golem_${i}_${battleId}`, name: `Rock Golem ${i + 1}`, maxHp: 80, currentHp: 80, ap: 15, def: 5, spd: 4, actionGauge: Math.random() * 20 };
                 }
                 if (mk === 'blob') {
-                    return { type: mk, id: `blob_${i}`, name: `Bloblin ${i + 1}`, maxHp: 40, currentHp: 40, ap: 8, def: 0, spd: 8, actionGauge: Math.random() * 50 };
+                    return { type: mk, id: `blob_${i}_${battleId}`, name: `Bloblin ${i + 1}`, maxHp: 40, currentHp: 40, ap: 8, def: 0, spd: 8, actionGauge: Math.random() * 50 };
                 }
                 if (mk === 'rat') {
-                    return { type: mk, id: `rat_${i}`, name: `Giant Rat ${i + 1}`, maxHp: 22, currentHp: 22, ap: 4, def: 0, spd: 10, actionGauge: Math.random() * 50 };
+                    return { type: mk, id: `rat_${i}_${battleId}`, name: `Giant Rat ${i + 1}`, maxHp: 22, currentHp: 22, ap: 4, def: 0, spd: 10, actionGauge: Math.random() * 50 };
                 }
                 if (mk === 'ice_imp') {
-                    return { type: mk, id: `ice_imp_${i}`, name: `Ice Imp ${i + 1}`, maxHp: 50, currentHp: 50, ap: 10, def: 2, spd: 10, actionGauge: Math.random() * 40 };
+                    return { type: mk, id: `ice_imp_${i}_${battleId}`, name: `Ice Imp ${i + 1}`, maxHp: 50, currentHp: 50, ap: 10, def: 2, spd: 10, actionGauge: Math.random() * 40 };
                 }
                 if (mk === 'dummy') {
-                    return { type: mk, id: `dummy_0`, name: `Training Dummy`, maxHp: 100, currentHp: 100, ap: 1, def: 9999, spd: 0, actionGauge: 0 };
+                    return { type: mk, id: `dummy_0_${battleId}`, name: `Training Dummy`, maxHp: 100, currentHp: 100, ap: 1, def: 9999, spd: 0, actionGauge: 0 };
                 }
                 // fallback
-                return { id: `mob_${i}`, name: `Foe ${i + 1}`, maxHp: 30, currentHp: 30, ap: 6, def: 0, spd: 8, actionGauge: Math.random() * 50 };
+                return { id: `mob_${i}_${battleId}`, name: `Foe ${i + 1}`, maxHp: 30, currentHp: 30, ap: 6, def: 0, spd: 8, actionGauge: Math.random() * 50 };
             });
 
             // Batch Updates
