@@ -38,7 +38,7 @@ export const SKILLS = {
 // Centralized drop definitions - monsters and missions reference these by id.
 // Add/adjust items here; easier to manage and localize drop metadata.
 export const DROPS = {
-    rat_fur_cape: { id: 'rat_fur_cape', name: 'Rat Fur Cape', type: 'cape', stats: { spd: 2, maxHp: -1 }, desc: 'A cape made from rat fur.' },
+    rat_fur_cape: { id: 'rat_fur_cape', name: 'Rat Fur Cape', type: 'cape', stats: { spd: 2, maxHp: -10 }, desc: 'A cape made from rat fur.' },
     ice_boots: { id: 'ice_boots', name: 'Ice Boots', type: 'boots', stats: { spd: 2, def: 1 }, desc: 'Boots of chilled agility.' },
     slime_paste: { id: 'slime_paste', name: 'Slime Paste', type: 'resource', desc: 'Sticky.' },
     iron_ore: { id: 'iron_ore', name: 'Iron Ore', type: 'resource', desc: 'Raw ore for smithing.' },
