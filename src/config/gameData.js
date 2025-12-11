@@ -131,7 +131,7 @@ export const ENEMY_STATS = {
     behemoth: { maxHp: 20000, ap: 220, def: 80, spd: 8 },
     titan: { maxHp: 30000, ap: 300, def: 100, spd: 6 },
     fallen_god: { maxHp: 50000, ap: 450, def: 150, spd: 40 },
-    basilisk: { maxHp: 1800, ap: 50, def: 25, spd: 12 }
+    basilisk: { maxHp: 1200, ap: 40, def: 20, spd: 12 }
 };
 
 export const MISSIONS = {
