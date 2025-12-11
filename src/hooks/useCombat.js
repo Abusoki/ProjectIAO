@@ -381,7 +381,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
 
         try {
             console.log("HandleVictory started. Setting state to victory.");
-            setGameState('victory');
+            // setGameState('victory'); // Moved to end
             setCombatLog(prev => [...prev, { text: "🏆 VICTORY! Processing rewards...", source: 'system' }]);
 
             const xpGain = 20;
@@ -505,6 +505,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
             batch.update(combatRef, { active: false });
 
             await batch.commit();
+            setGameState('victory');
 
             // Log Result
             try {

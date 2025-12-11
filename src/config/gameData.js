@@ -113,7 +113,7 @@ export const ENEMY_STATS = {
     king_croak: { maxHp: 300, ap: 18, def: 8, spd: 8 },
     // New Enemies (Level 11-30) - REBALANCED
     gargoyle: { maxHp: 800, ap: 35, def: 20, spd: 14 },
-    dark_knight: { maxHp: 800, ap: 35, def: 35, spd: 18 },
+    dark_knight: { maxHp: 600, ap: 25, def: 35, spd: 15 },
     wolf_alpha: { maxHp: 800, ap: 45, def: 8, spd: 18 },
     assassin_npc: { maxHp: 500, ap: 45, def: 10, spd: 28 },
     hydra: { maxHp: 5000, ap: 55, def: 15, spd: 14 },
