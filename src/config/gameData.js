@@ -88,6 +88,52 @@ export const ENEMY_DROPS = {
     king_croak: [{ id: 'croak_crown', chance: 0.5 }, { id: 'trident', chance: 0.2 }]
 };
 
+export const ENEMY_STATS = {
+    golem: { maxHp: 80, ap: 15, def: 5, spd: 4 },
+    blob: { maxHp: 40, ap: 8, def: 0, spd: 8 },
+    rat: { maxHp: 22, ap: 4, def: 0, spd: 10 },
+    ice_imp: { maxHp: 50, ap: 10, def: 2, spd: 10 },
+    dummy: { maxHp: 100, ap: 1, def: 9999, spd: 0 },
+    goblin: { maxHp: 35, ap: 7, def: 1, spd: 9 },
+    spider: { maxHp: 30, ap: 6, def: 0, spd: 12 },
+    bandit: { maxHp: 45, ap: 9, def: 2, spd: 8 },
+    wolf: { maxHp: 40, ap: 8, def: 1, spd: 11 },
+    skeleton: { maxHp: 35, ap: 8, def: 1, spd: 7 },
+    merfolk: { maxHp: 55, ap: 10, def: 2, spd: 9 },
+    orc: { maxHp: 70, ap: 12, def: 3, spd: 6 },
+    vampire: { maxHp: 90, ap: 14, def: 4, spd: 11 },
+    robot: { maxHp: 100, ap: 12, def: 8, spd: 5 },
+    wyvern: { maxHp: 150, ap: 18, def: 6, spd: 12 },
+    voidling: { maxHp: 60, ap: 15, def: 2, spd: 13 },
+    demon: { maxHp: 500, ap: 25, def: 10, spd: 10 },
+    // Dungeon
+    frog: { maxHp: 40, ap: 6, def: 1, spd: 9 },
+    toad: { maxHp: 60, ap: 8, def: 3, spd: 5 },
+    bullfrog: { maxHp: 90, ap: 10, def: 5, spd: 5 },
+    king_croak: { maxHp: 300, ap: 18, def: 8, spd: 8 },
+    // New Enemies (Level 11-30) - REBALANCED
+    gargoyle: { maxHp: 800, ap: 35, def: 20, spd: 14 },
+    dark_knight: { maxHp: 800, ap: 35, def: 35, spd: 18 },
+    wolf_alpha: { maxHp: 800, ap: 45, def: 8, spd: 18 },
+    assassin_npc: { maxHp: 500, ap: 45, def: 10, spd: 28 },
+    hydra: { maxHp: 5000, ap: 55, def: 15, spd: 14 },
+    cultist_leader: { maxHp: 1500, ap: 60, def: 10, spd: 15 },
+    berserker: { maxHp: 1000, ap: 50, def: 5, spd: 16 },
+    treant: { maxHp: 6000, ap: 40, def: 45, spd: 6 },
+    chimera: { maxHp: 4500, ap: 70, def: 20, spd: 20 },
+    iron_golem: { maxHp: 8000, ap: 55, def: 60, spd: 8 },
+    red_dragon: { maxHp: 15000, ap: 120, def: 50, spd: 22 },
+    elemental_mage: { maxHp: 2200, ap: 110, def: 15, spd: 24 },
+    lich: { maxHp: 6500, ap: 140, def: 30, spd: 18 },
+    shadow_phantom: { maxHp: 1500, ap: 100, def: 10, spd: 35 },
+    void_lord: { maxHp: 12000, ap: 180, def: 55, spd: 20 },
+    phoenix: { maxHp: 10000, ap: 130, def: 25, spd: 25 },
+    behemoth: { maxHp: 20000, ap: 220, def: 80, spd: 8 },
+    titan: { maxHp: 30000, ap: 300, def: 100, spd: 6 },
+    fallen_god: { maxHp: 50000, ap: 450, def: 150, spd: 40 },
+    basilisk: { maxHp: 1800, ap: 50, def: 25, spd: 12 }
+};
+
 export const MISSIONS = {
     training_dummy: {
         name: "Training Dummy",

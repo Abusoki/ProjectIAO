@@ -3,7 +3,7 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, doc, onSnapshot, getDoc, setDoc, deleteDoc, updateDoc, getCountFromServer, writeBatch } from 'firebase/firestore';
 import { auth, db } from './config/firebase';
 import { generateRecruit } from './utils/mechanics';
-import { TAVERN_REFRESH_MS, MISSIONS, DUNGEONS } from './config/gameData';
+import { TAVERN_REFRESH_MS, MISSIONS, DUNGEONS, ENEMY_STATS } from './config/gameData';
 
 // Hooks
 import { useGameLoop } from './hooks/useGameLoop';
@@ -150,30 +150,7 @@ export default function App() {
                     const mk = mConf.enemyType;
                     const battleId = Date.now() + i; // unique-ish suffix
                     // Quick Stats Map (could be centralized in gameData but inline for now is fine)
-                    const stats = {
-                        golem: { maxHp: 80, ap: 15, def: 5, spd: 4 },
-                        blob: { maxHp: 40, ap: 8, def: 0, spd: 8 },
-                        rat: { maxHp: 22, ap: 4, def: 0, spd: 10 },
-                        ice_imp: { maxHp: 50, ap: 10, def: 2, spd: 10 },
-                        dummy: { maxHp: 100, ap: 1, def: 9999, spd: 0 },
-                        goblin: { maxHp: 35, ap: 7, def: 1, spd: 9 },
-                        spider: { maxHp: 30, ap: 6, def: 0, spd: 12 },
-                        bandit: { maxHp: 45, ap: 9, def: 2, spd: 8 },
-                        wolf: { maxHp: 40, ap: 8, def: 1, spd: 11 },
-                        skeleton: { maxHp: 35, ap: 8, def: 1, spd: 7 },
-                        merfolk: { maxHp: 55, ap: 10, def: 2, spd: 9 },
-                        orc: { maxHp: 70, ap: 12, def: 3, spd: 6 },
-                        vampire: { maxHp: 90, ap: 14, def: 4, spd: 11 },
-                        robot: { maxHp: 100, ap: 12, def: 8, spd: 5 },
-                        wyvern: { maxHp: 150, ap: 18, def: 6, spd: 12 },
-                        voidling: { maxHp: 60, ap: 15, def: 2, spd: 13 },
-                        demon: { maxHp: 500, ap: 25, def: 10, spd: 10 },
-                        // Dungeon
-                        frog: { maxHp: 40, ap: 6, def: 1, spd: 9 },
-                        toad: { maxHp: 60, ap: 8, def: 3, spd: 5 },
-                        bullfrog: { maxHp: 90, ap: 10, def: 5, spd: 5 },
-                        king_croak: { maxHp: 300, ap: 18, def: 8, spd: 8 }
-                    };
+                    const stats = ENEMY_STATS;
 
                     const s = stats[mk] || { maxHp: 30, ap: 6, def: 0, spd: 8 }; // fallback
 
