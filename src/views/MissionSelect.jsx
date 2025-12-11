@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { ChevronRight, AlertTriangle, Mountain, Zap } from 'lucide-react';
-import { MISSIONS } from '../config/gameData';
+import { MISSIONS, DUNGEONS } from '../config/gameData';
 
 export default function MissionSelect({ troops, selectedTroops, setSelectedTroops, setView, startMission }) {
     const MAX_SELECT = 4;
+    const MAX_DUNGEON_SELECT = 3;
 
-    const [openCategory, setOpenCategory] = useState(1); // which category panel is open (1..4)
+    const [openCategory, setOpenCategory] = useState(1); // which category panel is open (1..4, 'dungeon')
 
     const toggleSelect = (t) => {
         const isSelected = selectedTroops.includes(t.uid);
@@ -21,14 +22,17 @@ export default function MissionSelect({ troops, selectedTroops, setSelectedTroop
     // CATEGORY RULE: missions are grouped by their "maxParty".
     // A mission with maxParty == N appears in the N-person category.
     const missionsForMax = (size) => missions.filter(m => (m.maxParty || 1) === size);
+    const dungeonList = Object.entries(DUNGEONS || {}).map(([key, d]) => ({ key, ...d, isDungeon: true }));
 
     // UI card for each mission
     const renderMissionCard = (m) => {
+        const limit = m.isDungeon ? MAX_DUNGEON_SELECT : (m.maxParty || 1);
+
         // can start when at least one character selected and selected count <= mission max
-        const canStart = selectedTroops.length > 0 && selectedTroops.length <= (m.maxParty || 1);
-        const tooMany = selectedTroops.length > (m.maxParty || 1);
-        const btnLabel = canStart ? 'Go' : (selectedTroops.length === 0 ? `Select up to ${m.maxParty}` : `Too many selected`);
-        const note = m.noXp ? 'No XP' : `Lvl ${m.level} • ${m.desc}`;
+        const canStart = selectedTroops.length > 0 && selectedTroops.length <= limit;
+        const tooMany = selectedTroops.length > limit;
+        const btnLabel = canStart ? 'Go' : (selectedTroops.length === 0 ? `Select up to ${limit}` : `Too many selected`);
+        const note = m.noXp ? 'No XP' : (m.isDungeon ? `Lvl ${m.level} • Dungeon` : `Lvl ${m.level} • ${m.desc}`);
 
         return (
             <div key={m.key} className="bg-slate-800 p-4 rounded-lg border border-slate-700 flex justify-between items-center">
@@ -40,7 +44,7 @@ export default function MissionSelect({ troops, selectedTroops, setSelectedTroop
                         <span className="text-slate-200">{m.name}</span>
                     </div>
                     <div className="text-xs text-slate-400 mt-1">{note}</div>
-                    <div className="text-[11px] text-slate-500 mt-2">Allowed: up to {m.maxParty} • Spawns: {m.spawnMin || 1}{m.spawnMax ? `–${m.spawnMax}` : ''}</div>
+                    <div className="text-[11px] text-slate-500 mt-2">Allowed: up to {m.isDungeon ? MAX_DUNGEON_SELECT : m.maxParty} • Spawns: {m.spawnMin || 1}{m.spawnMax ? `–${m.spawnMax}` : ''}</div>
                     {m.drops && m.drops.length > 0 && (
                         <div className="text-[11px] text-slate-400 mt-1">Possible drops: {m.drops.map(d => d.name).join(', ')}</div>
                     )}
@@ -101,6 +105,19 @@ export default function MissionSelect({ troops, selectedTroops, setSelectedTroop
         );
     };
 
+    const DungeonHeader = () => (
+        <button
+            onClick={() => setOpenCategory(openCategory === 'dungeon' ? null : 'dungeon')}
+            className="w-full flex justify-between items-center p-3 bg-indigo-900/40 rounded border border-indigo-500 hover:bg-indigo-900/60"
+        >
+            <div className="text-left">
+                <div className="font-semibold text-indigo-200">Dungeons</div>
+                <div className="text-xs text-indigo-300">{dungeonList.length} Dungeons Available</div>
+            </div>
+            <div className="text-xs text-indigo-300">{openCategory === 'dungeon' ? 'Hide' : 'Show'}</div>
+        </button>
+    );
+
     return (
         <div className="space-y-4">
             <div className="flex items-center gap-2 mb-4">
@@ -114,6 +131,15 @@ export default function MissionSelect({ troops, selectedTroops, setSelectedTroop
             <SquadList />
 
             <div className="space-y-3">
+                <div className="space-y-2">
+                    <DungeonHeader />
+                    {openCategory === 'dungeon' && (
+                        <div className="grid grid-cols-2 gap-2">
+                            {dungeonList.map(renderMissionCard)}
+                        </div>
+                    )}
+                </div>
+
                 {[1, 2, 3, 4].map(size => (
                     <div key={size} className="space-y-2">
                         <CategoryHeader size={size} />

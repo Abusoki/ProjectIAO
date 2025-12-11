@@ -43,7 +43,10 @@ export default function CharacterSheet({ user, unit, inventory, setView, appId }
         let slot = 'mainHand';
         if (['gloves', 'cape', 'boots', 'helm', 'body', 'legs'].includes(item.type)) slot = item.type;
 
-        let newInv = inventory.filter(i => i.id !== item.id);
+        const idx = inventory.findIndex(i => i.id === item.id);
+        const newInv = [...inventory];
+        if (idx > -1) newInv.splice(idx, 1);
+
         if (unit.equipment?.[slot]) newInv.push(unit.equipment[slot]);
 
         await Promise.all([
@@ -64,7 +67,9 @@ export default function CharacterSheet({ user, unit, inventory, setView, appId }
     const consumeItem = async (item) => {
         if (unit.currentHp >= stats.maxHp) return;
         const newHp = Math.min(stats.maxHp, unit.currentHp + item.value);
-        const newInv = inventory.filter(i => i.id !== item.id);
+        const idx = inventory.findIndex(i => i.id === item.id);
+        const newInv = [...inventory];
+        if (idx > -1) newInv.splice(idx, 1);
         await Promise.all([
             updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', unit.uid), { currentHp: newHp }),
             updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), { inventory: newInv })

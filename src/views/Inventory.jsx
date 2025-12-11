@@ -67,7 +67,11 @@ export default function Inventory({ inventory = [], troops, user, appId }) {
             const group = grouped.find(g => g.key === groupKey);
             if (!group || group.ids.length === 0) return;
             const removeId = group.ids[0];
-            const newInv = inventory.filter(i => i.id !== removeId);
+
+            const idx = inventory.findIndex(i => i.id === removeId);
+            const newInv = [...inventory];
+            if (idx > -1) newInv.splice(idx, 1);
+
             await writeInventory(newInv);
         } catch (e) {
             console.error('Discard one failed', e);
@@ -133,7 +137,9 @@ export default function Inventory({ inventory = [], troops, user, appId }) {
             const healAmount = item.value || 10;
             const newHp = Math.min(stats.maxHp, target.currentHp + healAmount);
 
-            const newInv = inventory.filter(i => i.id !== removeId);
+            const idx = inventory.findIndex(i => i.id === removeId);
+            const newInv = [...inventory];
+            if (idx > -1) newInv.splice(idx, 1);
 
             await Promise.all([
                 updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'troops', target.uid), { currentHp: newHp }),
@@ -149,10 +155,10 @@ export default function Inventory({ inventory = [], troops, user, appId }) {
 
     // --- UI helpers ---
     const getTypeIcon = (type) => {
-        if (type === 'weapon') return <Sword size={14} className="text-red-400"/>;
-        if (['gloves', 'cape', 'boots'].includes(type)) return <Shield size={14} className="text-blue-400"/>;
-        if (type === 'food') return <Apple size={14} className="text-green-400"/>;
-        return <Gem size={14} className="text-amber-400"/>;
+        if (type === 'weapon') return <Sword size={14} className="text-red-400" />;
+        if (['gloves', 'cape', 'boots'].includes(type)) return <Shield size={14} className="text-blue-400" />;
+        if (type === 'food') return <Apple size={14} className="text-green-400" />;
+        return <Gem size={14} className="text-amber-400" />;
     };
 
     return (
@@ -174,9 +180,9 @@ export default function Inventory({ inventory = [], troops, user, appId }) {
             </div>
 
             <div className="flex justify-end gap-2 mb-2">
-                 <button onClick={() => setSort(sort === 'name' ? 'type' : 'name')} className="text-xs flex items-center gap-1 text-slate-400 hover:text-white">
+                <button onClick={() => setSort(sort === 'name' ? 'type' : 'name')} className="text-xs flex items-center gap-1 text-slate-400 hover:text-white">
                     <ArrowUpDown size={12} /> Sort: <span className="uppercase">{sort}</span>
-                 </button>
+                </button>
             </div>
 
             {/* Item List */}
@@ -197,7 +203,7 @@ export default function Inventory({ inventory = [], troops, user, appId }) {
                                     <div>
                                         <div className="font-bold text-sm text-slate-200">
                                             {item.name}
-                                            {group.count > 1 && <span className="ml-2 text-xs text-slate-400">×{group.count}</span>}
+                                            {group.count > 1 && <span className="ml-2 text-xs text-slate-400">x{group.count}</span>}
                                         </div>
                                         <div className="text-[10px] text-slate-400 uppercase tracking-wider">{item.type}</div>
 

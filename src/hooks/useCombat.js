@@ -6,7 +6,7 @@ import { getEffectiveStats } from '../utils/mechanics';
 import { LEVEL_XP_CURVE, DROPS, ENEMY_DROPS } from '../config/gameData';
 import { generateId, randomInt } from '../utils/helpers';
 
-export function useCombat(user, troops, enemies, gameState, setGameState, setEnemies, setView, selectedTroops, inventory, autoBattle, setAutoBattle, setTroops) {
+export function useCombat(user, troops, enemies, gameState, setGameState, setEnemies, setView, selectedTroops, inventory, autoBattle, setAutoBattle, setTroops, dungeonState) {
     const [combatLog, setCombatLog] = useState([]);
     const [damageEvents, setDamageEvents] = useState([]);
     const [currentLoot, setCurrentLoot] = useState([]);
@@ -307,6 +307,95 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
     }, [gameState]); // REFACTOR: Dependent ONLY on gameState to start/stop. Loop handles data via Refs.
 
     const handleVictory = async (survivors) => {
+        // Dungeon: Check for next stage
+        if (dungeonState?.isDungeon && dungeonState.currentStage < (dungeonState.stages.length - 1)) {
+            console.log(`Dungeon: Stage ${dungeonState.currentStage + 1} Cleared. Advancing...`);
+
+            const nextStageIdx = dungeonState.currentStage + 1;
+            const nextStageConf = dungeonState.stages[nextStageIdx];
+
+            // Generate Next Wave Enemies
+            const generateNextWave = (mConf) => {
+                const minSpawn = mConf.spawnMin || 1;
+                const maxSpawn = mConf.spawnMax || Math.max(1, Math.floor(Math.random() * 4) + 1);
+                const enemyCount = Math.floor(Math.random() * (maxSpawn - minSpawn + 1)) + minSpawn;
+
+                return Array.from({ length: enemyCount }, (_, i) => {
+                    const mk = mConf.enemyType;
+                    const battleId = Date.now() + i;
+                    const stats = {
+                        golem: { maxHp: 80, ap: 15, def: 5, spd: 4 },
+                        blob: { maxHp: 40, ap: 8, def: 0, spd: 8 },
+                        rat: { maxHp: 22, ap: 4, def: 0, spd: 10 },
+                        ice_imp: { maxHp: 50, ap: 10, def: 2, spd: 10 },
+                        dummy: { maxHp: 100, ap: 1, def: 9999, spd: 0 },
+                        goblin: { maxHp: 35, ap: 7, def: 1, spd: 9 },
+                        spider: { maxHp: 30, ap: 6, def: 0, spd: 12 },
+                        bandit: { maxHp: 45, ap: 9, def: 2, spd: 8 },
+                        wolf: { maxHp: 40, ap: 8, def: 1, spd: 11 },
+                        skeleton: { maxHp: 35, ap: 8, def: 1, spd: 7 },
+                        merfolk: { maxHp: 55, ap: 10, def: 2, spd: 9 },
+                        orc: { maxHp: 70, ap: 12, def: 3, spd: 6 },
+                        vampire: { maxHp: 90, ap: 14, def: 4, spd: 11 },
+                        robot: { maxHp: 100, ap: 12, def: 8, spd: 5 },
+                        wyvern: { maxHp: 150, ap: 18, def: 6, spd: 12 },
+                        voidling: { maxHp: 60, ap: 15, def: 2, spd: 13 },
+                        demon: { maxHp: 500, ap: 25, def: 10, spd: 10 },
+                        // Dungeon
+                        frog: { maxHp: 40, ap: 6, def: 1, spd: 9 },
+                        toad: { maxHp: 60, ap: 8, def: 3, spd: 5 },
+                        bullfrog: { maxHp: 90, ap: 10, def: 5, spd: 5 },
+                        king_croak: { maxHp: 300, ap: 18, def: 8, spd: 8 }
+                    };
+
+                    const s = stats[mk] || { maxHp: 30, ap: 6, def: 0, spd: 8 };
+
+                    return {
+                        type: mk,
+                        id: `${mk}_${i}_${Date.now()}`,
+                        name: mk === 'king_croak' ? 'King Croak' : `${mk.charAt(0).toUpperCase() + mk.slice(1)} ${i + 1}`,
+                        maxHp: s.maxHp,
+                        currentHp: s.maxHp,
+                        ap: s.ap,
+                        def: s.def,
+                        spd: s.spd,
+                        actionGauge: mk === 'dummy' ? 0 : Math.random() * 40 + 20 // Enfeeble players by giving enemies initiative in later waves? No, kept fair.
+                    };
+                });
+            };
+
+            const nextEnemies = generateNextWave(nextStageConf);
+
+            // Update Firestore for next stage
+            const batch = writeBatch(db);
+            const combatRef = doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'system', 'combat');
+
+            batch.update(combatRef, {
+                enemies: nextEnemies,
+                currentStage: nextStageIdx,
+                log: arrayUnion({ text: `=== STAGE ${nextStageIdx + 1}: ${nextStageConf.name} ===`, source: 'system' })
+            });
+
+            // Persist Survivor HP
+            survivors.forEach(s => {
+                const tr = doc(db, 'artifacts', 'iron-and-oil-web', 'users', user.uid, 'troops', s.uid);
+                batch.update(tr, {
+                    currentHp: s.currentHp,   // Save current HP state
+                    actionGauge: 0,           // Reset action gauge for fairness/pacing
+                    inCombat: true
+                });
+            });
+
+            await batch.commit();
+
+            // Update Local Log immediately to show progress
+            setCombatLog(prev => [...prev, { text: `Stage ${nextStageIdx + 1} Begins!`, source: 'system' }]);
+
+            // Reset processing flag so the loop continues processing the new wave
+            processingResult.current = false;
+            return;
+        }
+
         try {
             console.log("HandleVictory started. Setting state to victory.");
             setGameState('victory');

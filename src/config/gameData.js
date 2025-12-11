@@ -43,14 +43,49 @@ export const DROPS = {
     slime_paste: { id: 'slime_paste', name: 'Slime Paste', type: 'resource', desc: 'Sticky.' },
     iron_ore: { id: 'iron_ore', name: 'Iron Ore', type: 'resource', desc: 'Raw ore for smithing.' },
     slimey_gloves: { id: 'slimey_gloves', name: 'Slimey Gloves', type: 'gloves', stats: { def: 1 }, desc: 'Cooking + Combat Bonus' },
-    dull_sword: { id: 'dull_sword', name: 'Dull Sword', type: 'weapon', stats: { ap: 2, maxHp: -5 }, desc: 'Rusty weapon.' }
+    dull_sword: { id: 'dull_sword', name: 'Dull Sword', type: 'weapon', stats: { ap: 2, maxHp: -5 }, desc: 'Rusty weapon.' },
+    // New Drops
+    goblin_dagger: { id: 'goblin_dagger', name: 'Goblin Dagger', type: 'weapon', stats: { ap: 3 }, desc: 'Crude but fast.' },
+    spider_silk: { id: 'spider_silk', name: 'Spider Silk', type: 'resource', desc: 'Strong and light.' },
+    bandit_hood: { id: 'bandit_hood', name: 'Bandit Hood', type: 'helm', stats: { def: 2 }, desc: 'Hides your face.' },
+    wolf_fur: { id: 'wolf_fur', name: 'Wolf Fur', type: 'resource', desc: 'Warm and soft.' },
+    bone_shield: { id: 'bone_shield', name: 'Bone Shield', type: 'gloves', stats: { def: 4 }, desc: 'Made from sturdy bones.' },
+    heavy_axe: { id: 'heavy_axe', name: 'Heavy Axe', type: 'weapon', stats: { ap: 5, spd: -1 }, desc: 'Slow but deadly.' },
+    dragon_scale: { id: 'dragon_scale', name: 'Dragon Scale', type: 'resource', desc: 'Hard as diamond.' },
+    life_ring: { id: 'life_ring', name: 'Life Ring', type: 'gloves', stats: { maxHp: 20 }, desc: 'Pulses with vitality.' },
+    void_essence: { id: 'void_essence', name: 'Void Essence', type: 'resource', desc: 'Dark matter.' },
+    fire_sword: { id: 'fire_sword', name: 'Fire Sword', type: 'weapon', stats: { ap: 8 }, desc: 'Burns with eternal flame.' },
+    mechanical_gear: { id: 'mechanical_gear', name: 'Mechanical Gear', type: 'resource', desc: 'Precision part.' },
+    trident: { id: 'trident', name: 'Trident', type: 'weapon', stats: { ap: 4, def: 2 }, desc: 'Weapon of the deep.' },
+    // Dungeon Drops
+    frog_leg: { id: 'frog_leg', name: 'Frog Leg', type: 'resource', desc: 'Delicacy?' },
+    swamp_slime: { id: 'swamp_slime', name: 'Swamp Slime', type: 'resource', desc: 'Toxic sludge.' },
+    croak_crown: { id: 'croak_crown', name: 'Croak Crown', type: 'helm', stats: { maxHp: 30, def: 2 }, desc: 'The King\'s slimy crown.' }
 };
 
 export const ENEMY_DROPS = {
     rat: [{ id: 'rat_fur_cape', chance: 0.15 }],
     ice_imp: [{ id: 'ice_boots', chance: 0.12 }],
     golem: [{ id: 'iron_ore', chance: 0.1 }, { id: 'iron_ore', chance: 0.2 }],
-    blob: [{ id: 'slime_paste', chance: 0.1 }, { id: 'slimey_gloves', chance: 0.05 }, { id: 'dull_sword', chance: 0.3 }]
+    blob: [{ id: 'slime_paste', chance: 0.1 }, { id: 'slimey_gloves', chance: 0.05 }, { id: 'dull_sword', chance: 0.3 }],
+    // New Enemy Drops
+    goblin: [{ id: 'goblin_dagger', chance: 0.1 }, { id: 'iron_ore', chance: 0.05 }],
+    spider: [{ id: 'spider_silk', chance: 0.3 }],
+    bandit: [{ id: 'bandit_hood', chance: 0.08 }, { id: 'dull_sword', chance: 0.2 }],
+    wolf: [{ id: 'wolf_fur', chance: 0.25 }],
+    skeleton: [{ id: 'bone_shield', chance: 0.05 }, { id: 'dull_sword', chance: 0.1 }],
+    merfolk: [{ id: 'trident', chance: 0.05 }, { id: 'slime_paste', chance: 0.2 }],
+    orc: [{ id: 'heavy_axe', chance: 0.1 }, { id: 'iron_ore', chance: 0.15 }],
+    vampire: [{ id: 'life_ring', chance: 0.02 }],
+    robot: [{ id: 'mechanical_gear', chance: 0.4 }, { id: 'iron_ore', chance: 0.2 }],
+    wyvern: [{ id: 'dragon_scale', chance: 0.1 }, { id: 'goblin_dagger', chance: 0.05 }],
+    voidling: [{ id: 'void_essence', chance: 0.5 }],
+    demon: [{ id: 'fire_sword', chance: 0.05 }, { id: 'void_essence', chance: 0.2 }],
+    // Dungeon Enemies
+    frog: [{ id: 'frog_leg', chance: 0.4 }],
+    toad: [{ id: 'swamp_slime', chance: 0.3 }],
+    bullfrog: [{ id: 'frog_leg', chance: 0.5 }, { id: 'bone_shield', chance: 0.1 }],
+    king_croak: [{ id: 'croak_crown', chance: 0.5 }, { id: 'trident', chance: 0.2 }]
 };
 
 export const MISSIONS = {
@@ -105,6 +140,144 @@ export const MISSIONS = {
         maxParty: 4,
         spawnMin: 3,
         spawnMax: 5
+    },
+    // Leveled Missions
+    goblin_outpost: {
+        name: "Goblin Outpost",
+        level: 2,
+        desc: "A small camp of nasty goblins.",
+        enemyType: "goblin",
+        minParty: 1,
+        maxParty: 3,
+        spawnMin: 2,
+        spawnMax: 4
+    },
+    spider_nest: {
+        name: "Spider Nest",
+        level: 3,
+        desc: "Webs everywhere. Watch out for poison.",
+        enemyType: "spider",
+        minParty: 1,
+        maxParty: 3,
+        spawnMin: 3,
+        spawnMax: 6
+    },
+    bandit_camp: {
+        name: "Bandit Camp",
+        level: 4,
+        desc: "Thieves and cutthroats hiding in the woods.",
+        enemyType: "bandit",
+        minParty: 2,
+        maxParty: 4,
+        spawnMin: 2,
+        spawnMax: 5
+    },
+    wolf_pack: {
+        name: "Wolf Pack",
+        level: 4,
+        desc: "A pack of hungry wolves stalking the road.",
+        enemyType: "wolf",
+        minParty: 2,
+        maxParty: 4,
+        spawnMin: 3,
+        spawnMax: 6
+    },
+    haunted_crypt: {
+        name: "Haunted Crypt",
+        level: 5,
+        desc: "Restless skeletons guard ancient treasures.",
+        enemyType: "skeleton",
+        minParty: 2,
+        maxParty: 4,
+        spawnMin: 3,
+        spawnMax: 5
+    },
+    sunken_temple: {
+        name: "Sunken Temple",
+        level: 6,
+        desc: "Underwater ruins guarded by Merfolk.",
+        enemyType: "merfolk",
+        minParty: 2,
+        maxParty: 4,
+        spawnMin: 2,
+        spawnMax: 4
+    },
+    orc_stronghold: {
+        name: "Orc Stronghold",
+        level: 7,
+        desc: "Well-armed orcs preparing for war.",
+        enemyType: "orc",
+        minParty: 3,
+        maxParty: 4,
+        spawnMin: 2,
+        spawnMax: 5
+    },
+    vampire_mansion: {
+        name: "Vampire Mansion",
+        level: 8,
+        desc: "A dark estate on the hill.",
+        enemyType: "vampire",
+        minParty: 3,
+        maxParty: 4,
+        spawnMin: 1,
+        spawnMax: 2
+    },
+    mechanist_lab: {
+        name: "Mechanist's Lab",
+        level: 9,
+        desc: "Rogue automatons running wild.",
+        enemyType: "robot",
+        minParty: 3,
+        maxParty: 4,
+        spawnMin: 3,
+        spawnMax: 6
+    },
+    wyvern_peak: {
+        name: "Wyvern's Peak",
+        level: 9,
+        desc: "Scaling the mountain to face the beasts.",
+        enemyType: "wyvern",
+        minParty: 3,
+        maxParty: 4,
+        spawnMin: 1,
+        spawnMax: 3
+    },
+    abyssal_void: {
+        name: "Abyssal Void",
+        level: 10,
+        desc: "The fabric of reality is tearing.",
+        enemyType: "voidling",
+        minParty: 4,
+        maxParty: 4,
+        spawnMin: 5,
+        spawnMax: 10
+    },
+    demon_throne: {
+        name: "Demon Lord's Throne",
+        level: 10,
+        desc: "The ultimate challenge.",
+        enemyType: "demon",
+        minParty: 4,
+        maxParty: 4,
+        spawnMin: 1,
+        spawnMax: 1
+    }
+};
+
+export const DUNGEONS = {
+    frog_swamp: {
+        id: 'frog_swamp',
+        name: "Evil Frog Swamp",
+        desc: "5 Stages. Defeat King Croak. Party Size: 3.",
+        level: 5,
+        maxParty: 3,
+        stages: [
+            { name: "Swamp Edge", enemyType: 'frog', spawnMin: 2, spawnMax: 3 },
+            { name: "Murky Waters", enemyType: 'toad', spawnMin: 2, spawnMax: 3 },
+            { name: "Deep Mud", enemyType: 'bullfrog', spawnMin: 2, spawnMax: 3 },
+            { name: "Royal Guard", enemyType: 'bullfrog', spawnMin: 3, spawnMax: 4 },
+            { name: "King's Throne", enemyType: 'king_croak', spawnMin: 1, spawnMax: 1, boss: true }
+        ]
     }
 };
 

@@ -3,7 +3,7 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, doc, onSnapshot, getDoc, setDoc, deleteDoc, updateDoc, getCountFromServer, writeBatch } from 'firebase/firestore';
 import { auth, db } from './config/firebase';
 import { generateRecruit } from './utils/mechanics';
-import { TAVERN_REFRESH_MS, MISSIONS } from './config/gameData';
+import { TAVERN_REFRESH_MS, MISSIONS, DUNGEONS } from './config/gameData';
 
 // Hooks
 import { useGameLoop } from './hooks/useGameLoop';
@@ -48,6 +48,7 @@ export default function App() {
     const [gameState, setGameState] = useState('idle');
     const [selectedTroops, setSelectedTroops] = useState([]);
     const [enemies, setEnemies] = useState([]);
+    const [dungeonState, setDungeonState] = useState({ isDungeon: false, currentStage: 0, stages: [] });
     const [autoBattle, setAutoBattle] = useState(false);
 
     // Auto-battle tracking
@@ -95,7 +96,7 @@ export default function App() {
     useGameLoop(user, troops, inventory, gameState, profile, setTroops);
 
     const { combatLog, setCombatLog, damageEvents, currentLoot } = useCombat(
-        user, troops, enemies, gameState, handleGameStateChange, setEnemies, setView, selectedTroops, inventory, autoBattle, setAutoBattle, setTroops
+        user, troops, enemies, gameState, handleGameStateChange, setEnemies, setView, selectedTroops, inventory, autoBattle, setAutoBattle, setTroops, dungeonState
     );
 
     // --- MAIN COMBAT START FUNCTION ---
@@ -104,10 +105,17 @@ export default function App() {
             const currentTroops = troopsRef.current;
             let validSelectedIds = selectedTroops.filter(id => currentTroops.find(t => t.uid === id));
 
-            const mission = MISSIONS[missionKey];
+            let mission = MISSIONS[missionKey];
+            let isDungeon = false;
+
             if (!mission) {
-                console.error("Unknown mission key:", missionKey);
-                return;
+                if (DUNGEONS[missionKey]) {
+                    mission = DUNGEONS[missionKey];
+                    isDungeon = true;
+                } else {
+                    console.error("Unknown mission key:", missionKey);
+                    return;
+                }
             }
 
             // Party size checks
@@ -128,32 +136,71 @@ export default function App() {
 
             setLastMissionKey(missionKey);
 
-            // Determine enemy count from mission if provided
-            const minSpawn = mission.spawnMin || 1;
-            const maxSpawn = mission.spawnMax || Math.max(1, Math.floor(Math.random() * 4) + 1);
-            const enemyCount = Math.floor(Math.random() * (maxSpawn - minSpawn + 1)) + minSpawn;
+            // Determine enemies for the (first) battle
+            let currentStageIndex = 0;
+            let stagesList = [];
 
-            const battleId = Date.now();
-            const newEnemies = Array.from({ length: enemyCount }, (_, i) => {
-                const mk = mission.enemyType;
-                if (mk === 'golem') {
-                    return { type: mk, id: `golem_${i}_${battleId}`, name: `Rock Golem ${i + 1}`, maxHp: 80, currentHp: 80, ap: 15, def: 5, spd: 4, actionGauge: Math.random() * 20 };
+            // Helper to generate enemies for a stage/mission
+            const generateEnemies = (mConf) => {
+                const minSpawn = mConf.spawnMin || 1;
+                const maxSpawn = mConf.spawnMax || Math.max(1, Math.floor(Math.random() * 4) + 1);
+                const enemyCount = Math.floor(Math.random() * (maxSpawn - minSpawn + 1)) + minSpawn;
+
+                return Array.from({ length: enemyCount }, (_, i) => {
+                    const mk = mConf.enemyType;
+                    const battleId = Date.now() + i; // unique-ish suffix
+                    // Quick Stats Map (could be centralized in gameData but inline for now is fine)
+                    const stats = {
+                        golem: { maxHp: 80, ap: 15, def: 5, spd: 4 },
+                        blob: { maxHp: 40, ap: 8, def: 0, spd: 8 },
+                        rat: { maxHp: 22, ap: 4, def: 0, spd: 10 },
+                        ice_imp: { maxHp: 50, ap: 10, def: 2, spd: 10 },
+                        dummy: { maxHp: 100, ap: 1, def: 9999, spd: 0 },
+                        goblin: { maxHp: 35, ap: 7, def: 1, spd: 9 },
+                        spider: { maxHp: 30, ap: 6, def: 0, spd: 12 },
+                        bandit: { maxHp: 45, ap: 9, def: 2, spd: 8 },
+                        wolf: { maxHp: 40, ap: 8, def: 1, spd: 11 },
+                        skeleton: { maxHp: 35, ap: 8, def: 1, spd: 7 },
+                        merfolk: { maxHp: 55, ap: 10, def: 2, spd: 9 },
+                        orc: { maxHp: 70, ap: 12, def: 3, spd: 6 },
+                        vampire: { maxHp: 90, ap: 14, def: 4, spd: 11 },
+                        robot: { maxHp: 100, ap: 12, def: 8, spd: 5 },
+                        wyvern: { maxHp: 150, ap: 18, def: 6, spd: 12 },
+                        voidling: { maxHp: 60, ap: 15, def: 2, spd: 13 },
+                        demon: { maxHp: 500, ap: 25, def: 10, spd: 10 },
+                        // Dungeon
+                        frog: { maxHp: 40, ap: 6, def: 1, spd: 9 },
+                        toad: { maxHp: 60, ap: 8, def: 3, spd: 5 },
+                        bullfrog: { maxHp: 90, ap: 10, def: 5, spd: 5 },
+                        king_croak: { maxHp: 300, ap: 18, def: 8, spd: 8 }
+                    };
+
+                    const s = stats[mk] || { maxHp: 30, ap: 6, def: 0, spd: 8 }; // fallback
+
+                    return {
+                        type: mk,
+                        id: `${mk}_${i}_${Date.now()}`,
+                        name: mk === 'king_croak' ? 'King Croak' : `${mk.charAt(0).toUpperCase() + mk.slice(1)} ${i + 1}`,
+                        maxHp: s.maxHp,
+                        currentHp: s.maxHp,
+                        ap: s.ap,
+                        def: s.def,
+                        spd: s.spd,
+                        actionGauge: mk === 'dummy' ? 0 : Math.random() * 40
+                    };
+                });
+            };
+
+            let newEnemies = [];
+
+            if (isDungeon) {
+                stagesList = mission.stages;
+                if (stagesList.length > 0) {
+                    newEnemies = generateEnemies(stagesList[0]);
                 }
-                if (mk === 'blob') {
-                    return { type: mk, id: `blob_${i}_${battleId}`, name: `Bloblin ${i + 1}`, maxHp: 40, currentHp: 40, ap: 8, def: 0, spd: 8, actionGauge: Math.random() * 50 };
-                }
-                if (mk === 'rat') {
-                    return { type: mk, id: `rat_${i}_${battleId}`, name: `Giant Rat ${i + 1}`, maxHp: 22, currentHp: 22, ap: 4, def: 0, spd: 10, actionGauge: Math.random() * 50 };
-                }
-                if (mk === 'ice_imp') {
-                    return { type: mk, id: `ice_imp_${i}_${battleId}`, name: `Ice Imp ${i + 1}`, maxHp: 50, currentHp: 50, ap: 10, def: 2, spd: 10, actionGauge: Math.random() * 40 };
-                }
-                if (mk === 'dummy') {
-                    return { type: mk, id: `dummy_0_${battleId}`, name: `Training Dummy`, maxHp: 100, currentHp: 100, ap: 1, def: 9999, spd: 0, actionGauge: 0 };
-                }
-                // fallback
-                return { id: `mob_${i}_${battleId}`, name: `Foe ${i + 1}`, maxHp: 30, currentHp: 30, ap: 6, def: 0, spd: 8, actionGauge: Math.random() * 50 };
-            });
+            } else {
+                newEnemies = generateEnemies(mission);
+            }
 
             // Batch Updates
             const batch = writeBatch(db);
@@ -167,7 +214,16 @@ export default function App() {
             // 2. Create Combat Session
             const combatRef = doc(db, 'artifacts', appId, 'users', user.uid, 'system', 'combat');
             batch.set(combatRef, {
-                active: true, enemies: newEnemies, troopIds: validSelectedIds, log: [`Deployed to ${mission.name}`], tick: 0
+                active: true,
+                enemies: newEnemies,
+                troopIds: validSelectedIds,
+                log: [`Deployed to ${mission.name}`],
+                tick: 0,
+                // Dungeon State
+                isDungeon,
+                dungeonId: isDungeon ? missionKey : null,
+                currentStage: 0,
+                stages: stagesList
             });
 
             await batch.commit();
@@ -258,6 +314,16 @@ export default function App() {
                             setTroops(prev => prev.map(t =>
                                 data.troopIds.includes(t.uid) ? { ...t, inCombat: true, actionGauge: 0 } : t
                             ));
+
+                            if (data.isDungeon) {
+                                setDungeonState({
+                                    isDungeon: true,
+                                    currentStage: data.currentStage || 0,
+                                    stages: data.stages || []
+                                });
+                            } else {
+                                setDungeonState({ isDungeon: false, currentStage: 0, stages: [] });
+                            }
                         }
                         console.log("COMBAT LISTENER: Setting fighting state");
                         setGameState('fighting');
