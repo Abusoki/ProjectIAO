@@ -18,6 +18,7 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
     const lastSentCombatRef = useRef(null);
     const lastSentTroopsRef = useRef(new Map());
     const combatStartTimeRef = useRef(null);
+    const dungeonStateRef = useRef(dungeonState);
 
     // Sync refs when entering combat or when props change if NOT fighting (to keep fresh prep data)
     useEffect(() => {
@@ -48,8 +49,12 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
                 console.log("Syncing troops ref for combat start");
                 troopsRef.current = troops;
             }
+            troopsRef.current = troops;
         }
-    }, [enemies, troops, gameState]);
+
+        // Always sync dungeonState
+        dungeonStateRef.current = dungeonState;
+    }, [enemies, troops, gameState, dungeonState]);
 
     const inventoryRef = useRef(inventory);
     useEffect(() => { inventoryRef.current = inventory; }, [inventory]);
@@ -307,12 +312,13 @@ export function useCombat(user, troops, enemies, gameState, setGameState, setEne
     }, [gameState]); // REFACTOR: Dependent ONLY on gameState to start/stop. Loop handles data via Refs.
 
     const handleVictory = async (survivors) => {
+        const dState = dungeonStateRef.current;
         // Dungeon: Check for next stage
-        if (dungeonState?.isDungeon && dungeonState.currentStage < (dungeonState.stages.length - 1)) {
-            console.log(`Dungeon: Stage ${dungeonState.currentStage + 1} Cleared. Advancing...`);
+        if (dState?.isDungeon && dState.currentStage < (dState.stages.length - 1)) {
+            console.log(`Dungeon: Stage ${dState.currentStage + 1} Cleared. Advancing...`);
 
-            const nextStageIdx = dungeonState.currentStage + 1;
-            const nextStageConf = dungeonState.stages[nextStageIdx];
+            const nextStageIdx = dState.currentStage + 1;
+            const nextStageConf = dState.stages[nextStageIdx];
 
             // Generate Next Wave Enemies
             const generateNextWave = (mConf) => {
