@@ -261,6 +261,208 @@ export const MISSIONS = {
         maxParty: 4,
         spawnMin: 1,
         spawnMax: 1
+    },
+    // --- TIER 2 MISSIONS (Levels 11-20) ---
+    twin_gargoyles: {
+        name: "Twin Gargoyles",
+        level: 11,
+        desc: "Two stone guardians blocking the path.",
+        enemyType: "gargoyle",
+        minParty: 2,
+        maxParty: 4,
+        spawnMin: 2,
+        spawnMax: 2
+    },
+    elite_knight_duel: {
+        name: "Elite Knight Duel",
+        level: 12,
+        desc: "A fallen knight challenges you.",
+        enemyType: "dark_knight",
+        minParty: 1,
+        maxParty: 1,
+        spawnMin: 1,
+        spawnMax: 1
+    },
+    wolf_den_alpha: {
+        name: "Wolf Den Alpha",
+        level: 14,
+        desc: "The alpha wolves have returned.",
+        enemyType: "wolf_alpha",
+        minParty: 2,
+        maxParty: 4,
+        spawnMin: 2,
+        spawnMax: 4
+    },
+    assassins_contract: {
+        name: "Assassin's Contract",
+        level: 15,
+        desc: "Survive the hit squad.",
+        enemyType: "assassin_npc",
+        minParty: 1,
+        maxParty: 1,
+        spawnMin: 1,
+        spawnMax: 1
+    },
+    hydra_marsh: {
+        name: "Hydra's Marsh",
+        level: 16,
+        desc: "Cut off one head, two more grow back... essentially.",
+        enemyType: "hydra",
+        minParty: 3,
+        maxParty: 4,
+        spawnMin: 1,
+        spawnMax: 1
+    },
+    berserker_challenge: {
+        name: "Berserker Challenge",
+        level: 18,
+        desc: "Prove your strength against a rage-filled warrior.",
+        enemyType: "berserker",
+        minParty: 1,
+        maxParty: 1,
+        spawnMin: 1,
+        spawnMax: 1
+    },
+    corrupted_forest: {
+        name: "Corrupted Forest",
+        level: 19,
+        desc: "The trees are moving...",
+        enemyType: "treant",
+        minParty: 2,
+        maxParty: 4,
+        spawnMin: 2,
+        spawnMax: 3
+    },
+    chimera_peak: {
+        name: "Chimera's Peak",
+        level: 20,
+        desc: "Lion, Goat, Snake... all deadly.",
+        enemyType: "chimera",
+        minParty: 3,
+        maxParty: 4,
+        spawnMin: 1,
+        spawnMax: 2
+    },
+    // --- TIER 3 MISSIONS (Levels 21-30) ---
+    dragon_lair: {
+        name: "Dragon's Lair",
+        level: 22,
+        desc: "Face the ancient red dragon.",
+        enemyType: "red_dragon",
+        minParty: 4,
+        maxParty: 4,
+        spawnMin: 1,
+        spawnMax: 1
+    },
+    elemental_duo: {
+        name: "Fire & Ice Mages",
+        level: 23,
+        desc: "A deadly combination of elements.",
+        enemyType: "elemental_mage",
+        minParty: 2,
+        maxParty: 4,
+        spawnMin: 2,
+        spawnMax: 2
+    },
+    lich_crypt: {
+        name: "Lich's Crypt",
+        level: 24,
+        desc: "The master of necromancy awaits.",
+        enemyType: "lich",
+        minParty: 3,
+        maxParty: 4,
+        spawnMin: 1,
+        spawnMax: 1
+    },
+    shadow_master: {
+        name: "Shadow Master",
+        level: 25,
+        desc: "Defeat the shadow in single combat.",
+        enemyType: "shadow_phantom",
+        minParty: 1,
+        maxParty: 1,
+        spawnMin: 1,
+        spawnMax: 1
+    },
+    void_invasion: {
+        name: "Void Invasion",
+        level: 26,
+        desc: "They come from the darkness.",
+        enemyType: "void_lord",
+        minParty: 4,
+        maxParty: 4,
+        spawnMin: 2,
+        spawnMax: 4
+    },
+    behemoth_hunt: {
+        name: "Behemoth Hunt",
+        level: 28,
+        desc: "A monster the size of a mountain.",
+        enemyType: "behemoth",
+        minParty: 3,
+        maxParty: 4,
+        spawnMin: 1,
+        spawnMax: 1
+    },
+    titan_siege: {
+        name: "Titan Siege",
+        level: 29,
+        desc: "Stop the Titan from breaching the walls.",
+        enemyType: "titan",
+        minParty: 4,
+        maxParty: 4,
+        spawnMin: 1,
+        spawnMax: 1
+    },
+    god_killer: {
+        name: "God Slayer",
+        level: 30,
+        desc: "The ultimate test of mortality.",
+        enemyType: "fallen_god",
+        minParty: 4,
+        maxParty: 4,
+        spawnMin: 1,
+        spawnMax: 1
+    },
+    phoenix_rebirth: {
+        name: "Phoenix Rebirth",
+        level: 27,
+        desc: "It rises from the ashes.",
+        enemyType: "phoenix",
+        minParty: 4,
+        maxParty: 4,
+        spawnMin: 1,
+        spawnMax: 1
+    },
+    golem_factory: {
+        name: "Golem Factory",
+        level: 21,
+        desc: "Automated defenses have gone rogue.",
+        enemyType: "iron_golem",
+        minParty: 3,
+        maxParty: 4,
+        spawnMin: 3,
+        spawnMax: 5
+    },
+    cultist_ritual: {
+        name: "Cultist Ritual",
+        level: 17,
+        desc: "Stop the summoning.",
+        enemyType: "cultist_leader",
+        minParty: 2,
+        maxParty: 4,
+        spawnMin: 4,
+        spawnMax: 6
+    },
+    basilisk_den: {
+        name: "Basilisk Den",
+        level: 13,
+        desc: "Don't look into its eyes.",
+        enemyType: "basilisk",
+        minParty: 2,
+        maxParty: 3,
+        spawnMin: 1,
+        spawnMax: 2
     }
 };
 
@@ -286,11 +488,16 @@ export const SMITHING_RECIPES = [
     { id: 'iron_sword', name: 'Iron Sword', input: 'Iron Bar', count: 2, level: 3, xp: 50, time: 100 }
 ];
 
-export const MAX_LEVEL = 10;
-export const MAX_COOKING_LEVEL = 10;
-export const MAX_SMITHING_LEVEL = 10;
+export const MAX_LEVEL = 30;
+export const MAX_COOKING_LEVEL = 30;
+export const MAX_SMITHING_LEVEL = 30;
 
-export const LEVEL_XP_CURVE = [0, 100, 250, 500, 1000, 2000, 4000, 8000, 15000, 99999];
+export const LEVEL_XP_CURVE = [
+    0, 100, 250, 500, 1000, 2000, 4000, 8000, 15000, 25000, // 1-10
+    40000, 60000, 85000, 115000, 150000, 190000, 240000, 300000, 370000, 450000, // 11-20
+    550000, 660000, 780000, 910000, 1050000, 1200000, 1360000, 1530000, 1710000, 2000000, // 21-30
+    99999999
+];
 
 export const SKILL_XP_CURVE = [0, 50, 150, 300, 600, 1200, 2500, 5000, 10000, 99999];
 
